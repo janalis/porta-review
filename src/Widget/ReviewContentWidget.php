@@ -19,6 +19,8 @@ use Porta\Ui\Markup\MarkupParser;
 use Porta\Ui\Theme\Styles;
 use Porta\Widget\PaneNavigationCallbacks;
 use Porta\Widget\Render\HeaderRenderer;
+use Porta\Widget\Render\MenuOverlayHost;
+use Porta\Widget\Render\MenuOverlayHostTrait;
 use Porta\Widget\Support\FillsPaneTrait;
 use Porta\Widget\Support\PanelRowStyle;
 use Symfony\Component\Tui\Input\Key;
@@ -42,8 +44,9 @@ use Symfony\Component\Tui\Widget\VerticallyExpandableInterface;
  * comments wrap to, so the caret walks through a conversation as it walks
  * through code, and `r` / `x` act on the thread it is in.
  */
-final class ReviewContentWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface
+final class ReviewContentWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface, MenuOverlayHost
 {
+    use MenuOverlayHostTrait;
     use FillsPaneTrait;
     use FocusableTrait;
     use KeybindingsTrait;

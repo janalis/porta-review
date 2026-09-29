@@ -9,8 +9,10 @@ use Porta\Config\CommandRegistry;
 use Porta\Editor\BufferService;
 use Porta\Editor\OpenFocus;
 use Porta\Ide;
+use Porta\Layout\ViewRegions;
 use Porta\Plugin\Lifecycle\PluginLifecycle;
 use Porta\Tests\Support\ClearsPortaLsp;
+use Porta\Tests\Support\Paint;
 use Porta\Tests\Support\PreservesPath;
 use Porta\Tests\Support\RunsIde;
 use Porta\Tests\Support\Services;
@@ -21,6 +23,8 @@ use Porta\Ui\Glyphs;
 use Porta\Workbench\View\ViewRegistry;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Tui\Ansi\AnsiUtils;
+use Symfony\Component\Tui\Render\RenderContext;
+use Symfony\Component\Tui\Render\Renderer;
 use Symfony\Component\Tui\Terminal\VirtualTerminal;
 use Symfony\Component\Tui\Tui;
 
@@ -312,6 +316,74 @@ final class LocalReviewE2eTest extends TestCase
 
                     \file_put_contents($thread.'/20260929T100500Z--claude.md', data: "Thanks, resolved on my side too.\n");
                     $this->awaitPainted($tui, $terminal, 'Thanks, resolved on my side too.');
+                },
+            ],
+        );
+
+        $this->addToAssertionCount(1);
+    }
+
+    /**
+     * The view's panes host the floating layers: a menu dropdown opened over
+     * the view is painted INTO them. Without it the app menu's dropdown showed
+     * only its top edge — the panes painted over the rest.
+     */
+    public function testAMenuDropdownPaintsOverTheViewsPanes(): void
+    {
+        \putenv('PATH=/nonexistent');
+        $project = self::project();
+
+        $this->runIde(
+            $project,
+            $project->path('src/A.php'),
+            [
+                200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
+                    Services::resolve($ide, CommandRegistry::class)->run('review:open');
+                    $this->awaitPainted($tui, $terminal, 'Tidy the loop');
+                    $tui->handleInput("\x1b[21~"); // F10, then ↓: the File dropdown
+                    $tui->handleInput("\x1b[B");
+                    $this->frame($tui);
+
+                    $list = $tui->getById('review-threads');
+                    $painted = AnsiUtils::stripAnsiCodes(\implode("\n", Paint::lines($list, new RenderContext($list->width(), 12))));
+                    $this->assertStringContainsString('Save File', $painted, 'the dropdown is composited into the thread list');
+                    $tui->handleInput("\x1b");
+                },
+            ],
+        );
+
+        $this->addToAssertionCount(1);
+    }
+
+    /** The view's left column resizes as one: a drag on the separator widens the list and the reply box alike. */
+    public function testTheSidebarResizesByItsSeparator(): void
+    {
+        \putenv('PATH=/nonexistent');
+        $project = self::project();
+
+        $this->runIde(
+            $project,
+            $project->path('src/A.php'),
+            [
+                200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
+                    Services::resolve($ide, CommandRegistry::class)->run('review:open');
+                    $this->awaitPainted($tui, $terminal, 'Tidy the loop');
+                    $this->frame($tui);
+                    $separator = Services::resolve($ide, ViewRegions::class)->find('review')?->separator();
+                    \assert(null !== $separator, description: 'the view minted its region');
+                    $rect = Services::resolve($ide, Renderer::class)->getWidgetRect($separator);
+                    \assert(null !== $rect, description: 'the separator was painted');
+                    $list = $tui->getById('review-threads');
+                    $before = $list->width();
+
+                    $row = $rect->row + 3;
+                    $tui->handleInput(\sprintf("\x1b[<0;%d;%dM", $rect->col + 1, $row));
+                    $tui->handleInput(\sprintf("\x1b[<32;%d;%dM", $rect->col + 11, $row));
+                    $tui->handleInput(\sprintf("\x1b[<0;%d;%dm", $rect->col + 11, $row));
+                    $this->frame($tui);
+
+                    $this->assertSame($before + 10, $list->width(), 'the list follows the drag');
+                    $this->assertSame($list->width(), $tui->getById('review-reply')->width(), 'and the reply box with it');
                 },
             ],
         );

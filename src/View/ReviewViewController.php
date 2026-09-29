@@ -61,6 +61,7 @@ final class ReviewViewController implements ContributedView
         private readonly \Closure $showResolved,
     ) {
         $services->region->sidebar()->add($list);
+        $services->region->setSidebarPanes(new ReviewSidebar($list, $reply));
         $services->region->sidebar()->add($reply);
         $services->region->content()->add($content);
 

@@ -16,6 +16,8 @@ use Porta\Ui\Role;
 use Porta\Ui\Theme\Styles;
 use Porta\Widget\PaneNavigationCallbacks;
 use Porta\Widget\Render\HeaderRenderer;
+use Porta\Widget\Render\MenuOverlayHost;
+use Porta\Widget\Render\MenuOverlayHostTrait;
 use Porta\Widget\Render\Rule;
 use Porta\Widget\Support\FillsPaneTrait;
 use Porta\Widget\Support\PanelRowStyle;
@@ -36,8 +38,9 @@ use Symfony\Component\Tui\Widget\VerticallyExpandableInterface;
  * are headings the selection steps over. Resolved threads are dimmed and
  * ticked, and left out altogether unless `showResolved` is on.
  */
-final class ReviewListWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface
+final class ReviewListWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface, MenuOverlayHost
 {
+    use MenuOverlayHostTrait;
     use FillsPaneTrait;
     use FocusableTrait;
     use KeybindingsTrait;
@@ -294,5 +297,11 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
             'focus_next_pane' => [Key::TAB],
             'exit_view' => [Key::ESCAPE],
         ];
+    }
+
+    /** Menus, toasts and tooltips are composited at the column's own width, not the region's. */
+    protected function overlayWidth(RenderContext $context): int
+    {
+        return $this->panelColumns($context);
     }
 }

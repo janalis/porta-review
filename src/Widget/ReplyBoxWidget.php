@@ -16,6 +16,8 @@ use Porta\Widget\Render\FieldBox;
 use Porta\Widget\Render\FieldSpec;
 use Porta\Widget\Render\FieldState;
 use Porta\Widget\Render\HeaderRenderer;
+use Porta\Widget\Render\MenuOverlayHost;
+use Porta\Widget\Render\MenuOverlayHostTrait;
 use Porta\Widget\Support\PanelWidth;
 use Porta\Widget\Support\StylesDefault;
 use Symfony\Component\Tui\Input\Key;
@@ -33,8 +35,9 @@ use Symfony\Component\Tui\Widget\KeybindingsTrait;
  * the review itself — and says which in its legend, so the reader knows where
  * the words will land before sending them. With no target it is disabled.
  */
-final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface
+final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface, MenuOverlayHost
 {
+    use MenuOverlayHostTrait;
     use FocusableTrait;
     use KeybindingsTrait;
     use PaneNavigationCallbacks;
@@ -171,5 +174,11 @@ final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface
             'focus_next_pane' => [Key::TAB],
             'exit_view' => [Key::ESCAPE],
         ];
+    }
+
+    /** Menus, toasts and tooltips are composited at the column's own width, not the region's. */
+    protected function overlayWidth(RenderContext $context): int
+    {
+        return $this->panelColumns($context);
     }
 }
