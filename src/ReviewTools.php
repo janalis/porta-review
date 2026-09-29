@@ -8,9 +8,11 @@ use Porta\Plugin\Api\PluginApi;
 use Porta\ReviewPlugin\Model\Anchor;
 use Porta\ReviewPlugin\Model\Comment;
 use Porta\ReviewPlugin\Model\Review;
+use Porta\ReviewPlugin\Model\Thread;
 use Porta\ReviewPlugin\Source\ReviewSource;
 use Porta\ReviewPlugin\Source\ReviewStore;
 use Porta\Support\FiberWait;
+use Revolt\EventLoop;
 
 /**
  * The branch's review as tools: an agent reads every conversation — a pull
@@ -22,9 +24,11 @@ use Porta\Support\FiberWait;
  */
 final readonly class ReviewTools
 {
+    /** @param float $loadTimeout how long a call waits for a load in flight before giving up, in seconds */
     public function __construct(
         private PluginApi $api,
         private ReviewStore $store,
+        private float $loadTimeout = 30.0,
     ) {}
 
     public function register(): void
@@ -44,6 +48,16 @@ final readonly class ReviewTools
                 'required' => ['thread', 'body'],
             ],
             $this->reply(...),
+        );
+        $this->api->registerTool(
+            'resolve',
+            'Resolve a thread of the current review, by its id from review_threads — or reopen it with resolved: false (list the resolved ones with includeResolved).',
+            [
+                'type' => 'object',
+                'properties' => ['thread' => ['type' => 'string'], 'resolved' => ['type' => 'boolean', 'description' => 'Default true']],
+                'required' => ['thread'],
+            ],
+            $this->resolve(...),
         );
         $this->api->registerTool(
             'comment',
@@ -93,14 +107,37 @@ final readonly class ReviewTools
     /** @param array<string, mixed> $arguments */
     private function reply(array $arguments): string
     {
-        $id = self::text($arguments, 'thread');
         $body = self::text($arguments, 'body');
-        $thread = $this->review()->thread($id) ?? throw new \InvalidArgumentException(\sprintf('No thread "%s" in this review', $id));
+        $thread = $this->thread($arguments);
         $this->write(static function (ReviewSource $source, Review $review, \Closure $done) use ($thread, $body): void {
             $source->reply($review, $thread, $body, $done);
         });
 
-        return 'Replied to '.$id;
+        return 'Replied to '.$thread->id;
+    }
+
+    /** @param array<string, mixed> $arguments */
+    private function resolve(array $arguments): string
+    {
+        $thread = $this->thread($arguments);
+        // Only an explicit false reopens: resolving is what the verb is for.
+        $resolved = false !== ($arguments['resolved'] ?? true);
+        if ($resolved === $thread->resolved) {
+            return \sprintf('%s is already %s', $thread->id, $resolved ? 'resolved' : 'open');
+        }
+        $this->write(static function (ReviewSource $source, Review $review, \Closure $done) use ($thread, $resolved): void {
+            $source->setResolved($review, $thread, $resolved, $done);
+        });
+
+        return ($resolved ? 'Resolved ' : 'Reopened ').$thread->id;
+    }
+
+    /** @param array<string, mixed> $arguments */
+    private function thread(array $arguments): Thread
+    {
+        $id = self::text($arguments, 'thread');
+
+        return $this->review()->thread($id) ?? throw new \InvalidArgumentException(\sprintf('No thread "%s" in this review', $id));
     }
 
     /** @param array<string, mixed> $arguments */
@@ -120,17 +157,31 @@ final readonly class ReviewTools
         return \sprintf('Commented on %s:%d', $path, $line);
     }
 
+    /**
+     * The review as loaded — waiting for a load in flight to settle first,
+     * so a call right after a write, or while the IDE starts, reads the
+     * fresh one instead of failing. A forge that never answers is given up
+     * on after {@see $loadTimeout}.
+     */
     private function review(): Review
     {
+        if ($this->store->loading) {
+            $timer = '';
+            /** @var bool $settled */
+            $settled = FiberWait::for(function (\Closure $done) use (&$timer): void {
+                $timer = EventLoop::delay($this->loadTimeout, static fn () => $done(false));
+                $this->store->whenSettled(static fn () => $done(true));
+            });
+            EventLoop::cancel($timer);
+            if (true !== $settled) {
+                throw new \RuntimeException(\sprintf('The review is still loading after %gs — ask again later', $this->loadTimeout));
+            }
+        }
         if (null !== $this->store->review) {
             return $this->store->review;
         }
 
-        throw new \RuntimeException(match (true) {
-            $this->store->loading => 'The review is still loading — ask again in a moment',
-            null !== $this->store->error => $this->store->error,
-            default => 'This branch has no review',
-        });
+        throw new \RuntimeException($this->store->error ?? 'This branch has no review');
     }
 
     /**

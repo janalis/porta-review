@@ -34,6 +34,9 @@ final class ReviewStore
     /** @var list<\Closure(): void> */
     private array $listeners = [];
 
+    /** @var list<\Closure(): void> one-shot, told when the load in flight settles */
+    private array $waiting = [];
+
     /** @param \Closure(\Closure(?ReviewSource): void): void $resolve finds the source for the branch as it is now */
     public function __construct(
         private readonly \Closure $resolve,
@@ -43,6 +46,24 @@ final class ReviewStore
     public function onChange(\Closure $listener): void
     {
         $this->listeners[] = $listener;
+    }
+
+    /**
+     * Call $then once no load is in flight: now, when none is, else when the
+     * current one settles — or the one that overtook it. For a caller that
+     * wants the answer rather than every change, and so cannot use
+     * {@see onChange()}, whose listeners stay for good.
+     *
+     * @param \Closure(): void $then
+     */
+    public function whenSettled(\Closure $then): void
+    {
+        if (!$this->loading) {
+            $then();
+
+            return;
+        }
+        $this->waiting[] = $then;
     }
 
     public function refresh(): void
@@ -95,6 +116,11 @@ final class ReviewStore
         $this->error = $error;
         $this->loading = false;
         $this->changed();
+        $waiting = $this->waiting;
+        $this->waiting = [];
+        foreach ($waiting as $then) {
+            $then();
+        }
     }
 
     private function changed(): void

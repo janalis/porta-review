@@ -89,6 +89,33 @@ final class ReviewStoreTest extends TestCase
         $this->assertSame('fresh', $store->review?->title);
     }
 
+    public function testWhenSettledWaitsForTheLoadInFlightAndFiresOnce(): void
+    {
+        $store = $this->store();
+        $told = [];
+        $store->whenSettled(static function () use (&$told): void {
+            $told[] = 'idle';
+        });
+        $this->assertSame(['idle'], $told, 'nothing in flight: at once');
+
+        $store->refresh();
+        $first = \array_shift($this->resolving);
+        $store->whenSettled(static function () use (&$told): void {
+            $told[] = 'settled';
+        });
+        $store->refresh(); // overtakes the first
+        $this->assertSame(['idle'], $told);
+        $first($this->source); // the overtaken one answers: dropped, not a settle
+        $this->assertSame(['idle'], $told);
+
+        \array_shift($this->resolving)(null);
+        $this->assertSame(['idle', 'settled'], $told, 'the load that overtook it settled');
+
+        $store->refresh();
+        \array_shift($this->resolving)(null);
+        $this->assertSame(['idle', 'settled'], $told, 'one-shot');
+    }
+
     public function testAWriteGoesToTheSourceThenReloads(): void
     {
         $store = $this->store();

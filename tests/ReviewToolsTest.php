@@ -110,10 +110,7 @@ final class ReviewToolsTest extends TestCase
 
     public function testWithoutAReviewItSaysWhy(): void
     {
-        $this->store->refresh();
-        $this->refused('threads', [], 'The review is still loading — ask again in a moment');
-
-        $this->source->answer(null, 'gh is not signed in');
+        $this->load(null, 'gh is not signed in');
         $this->refused('threads', [], 'gh is not signed in');
 
         $empty = new ReviewStore(static fn (\Closure $onDone) => $onDone(null));
@@ -123,6 +120,64 @@ final class ReviewToolsTest extends TestCase
         new ReviewTools($this->api, $empty)->register();
         $this->refused('threads', [], 'This branch has no review');
         $this->refused('comment', ['path' => 'a', 'line' => 1, 'body' => 'x'], 'This branch has no review');
+    }
+
+    public function testACallDuringALoadWaitsForItToSettle(): void
+    {
+        $this->store->refresh();
+        $source = $this->source;
+        EventLoop::delay(0.02, static fn () => $source->answer(self::review()));
+
+        $threads = $this->callTool($this->api, 'threads');
+
+        $this->assertIsArray($threads);
+        $this->assertSame('Cart totals', $threads['title'], 'it waited for the load instead of refusing');
+    }
+
+    public function testAReadRightAfterAWriteSeesTheReloadedReview(): void
+    {
+        $this->load(self::review());
+        $this->callTool($this->api, 'reply', ['thread' => 'open', 'body' => 'Done']);
+        $this->assertTrue($this->store->loading, 'the write reloads');
+        $source = $this->source;
+        $renamed = new Review(SourceKind::GitHub, '42', 'Renamed', self::review()->threads);
+        EventLoop::delay(0.02, static fn () => $source->answer($renamed));
+
+        $threads = $this->callTool($this->api, 'threads');
+
+        $this->assertIsArray($threads);
+        $this->assertSame('Renamed', $threads['title']);
+    }
+
+    public function testALoadThatNeverSettlesIsGivenUpOn(): void
+    {
+        $this->store->refresh(); // and never answered
+        $settings = new PluginSettings('/p', []);
+        $api = new PluginApi('review', new PluginManager(new EventDispatcher(), $settings), '/p', $settings);
+        new ReviewTools($api, $this->store, loadTimeout: 0.05)->register();
+
+        try {
+            $this->callTool($api, 'threads');
+            $this->fail('a load that never settles must not hang the caller');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('The review is still loading after 0.05s — ask again later', $e->getMessage());
+        }
+    }
+
+    public function testResolveAndReopenGoToTheSource(): void
+    {
+        $this->load(self::review());
+
+        $this->assertSame('Resolved open', $this->callTool($this->api, 'resolve', ['thread' => 'open']));
+        $this->source->answer(self::review());
+        $this->assertSame('Reopened closed', $this->callTool($this->api, 'resolve', ['thread' => 'closed', 'resolved' => false]));
+        $this->source->answer(self::review());
+        $this->assertSame(['resolve open', 'reopen closed'], $this->source->writes);
+
+        $this->assertSame('closed is already resolved', $this->callTool($this->api, 'resolve', ['thread' => 'closed', 'resolved' => true]));
+        $this->assertSame('open is already open', $this->callTool($this->api, 'resolve', ['thread' => 'open', 'resolved' => false]));
+        $this->assertCount(2, $this->source->writes, 'nothing to change, nothing written');
+        $this->refused('resolve', ['thread' => 'nope'], 'No thread "nope" in this review');
     }
 
     public function testAReplyGoesToTheSourceAndItsComplaintComesBack(): void
