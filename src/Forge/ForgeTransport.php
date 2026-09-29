@@ -48,8 +48,12 @@ final readonly class ForgeTransport
         if (null !== $cli) {
             $command = [$cli, 'api', '--method', $method, $path, '--hostname', $this->host];
             if (null !== $json) {
+                // The type named, because `glab api --input -` sends none and
+                // GitLab refuses the body ("content-type '' is not supported").
                 $command[] = '--input';
                 $command[] = '-';
+                $command[] = '--header';
+                $command[] = 'Content-Type: application/json';
             }
             $this->run($command, $json, $onDone);
 

@@ -39,7 +39,7 @@ final class ForgeTransportTest extends TestCase
         $this->send($transport, 'POST', 'graphql', ['query' => 'q', 'variables' => ['a' => 'é/']]);
         $this->assertTrue($this->answer[0]?->at('data', 'ok')->isTrue());
         $this->assertNull($this->answer[1]);
-        $this->assertSame(['api', '--method', 'POST', 'graphql', '--hostname', 'ghe.corp.com', '--input', '-'], $forge->calls()[0]['argv']);
+        $this->assertSame(['api', '--method', 'POST', 'graphql', '--hostname', 'ghe.corp.com', '--input', '-', '--header', 'Content-Type: application/json'], $forge->calls()[0]['argv']);
         $this->assertSame(['query' => 'q', 'variables' => ['a' => 'é/']], $forge->body(0));
 
         // No body: no --input, and an empty answer is a success with nothing in it.
