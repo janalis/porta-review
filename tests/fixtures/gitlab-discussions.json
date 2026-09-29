@@ -1,0 +1,1035 @@
+[
+  {
+    "id": "b85fe9d20caf63903e5d63a7c940002d6ae94474",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897302658,
+        "type": null,
+        "body": "Comment 6.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:23:13.846Z",
+        "updated_at": "2026-09-24T10:23:13.847Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "ace74c52d17e16930819b258935d4fc601abc4e7",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897302942,
+        "type": null,
+        "body": "Comment 7.\nSecond line.",
+        "author": {
+          "id": 39353959,
+          "username": "bob",
+          "public_email": null,
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:23:18.064Z",
+        "updated_at": "2026-09-24T10:23:18.066Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "c632ee5c5dfb3c066a5660f5e59c01a986172446",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897303677,
+        "type": null,
+        "body": "Comment 8.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:23:27.849Z",
+        "updated_at": "2026-09-24T10:23:27.852Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "973cfb340a4e8c3bfea402aeddd360e39e70516c",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897307430,
+        "type": null,
+        "body": "Comment 9.\nSecond line.",
+        "author": {
+          "id": 39353959,
+          "username": "bob",
+          "public_email": null,
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:24:16.409Z",
+        "updated_at": "2026-09-24T10:24:16.410Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "66c1d0aa33e91a4b0ec1ef669ae6731d98d8fff5",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897308075,
+        "type": null,
+        "body": "Comment 10.\nSecond line.",
+        "author": {
+          "id": 21826781,
+          "username": "carol",
+          "public_email": null,
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:24:25.050Z",
+        "updated_at": "2026-09-24T10:24:25.050Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "62b4810f008e59119de2e38e18bae0748b9d1549",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897380367,
+        "type": null,
+        "body": "Comment 11.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:38:36.509Z",
+        "updated_at": "2026-09-24T10:38:36.511Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "7659d90540e5f557e695a93229be2ead1c1f1a2f",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897381195,
+        "type": null,
+        "body": "Comment 12.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:38:47.458Z",
+        "updated_at": "2026-09-24T10:38:47.460Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "f04e5b8d098c5e281090dbd786bc8f95de199d3e",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897388905,
+        "type": null,
+        "body": "Comment 13.\nSecond line.",
+        "author": {
+          "id": 21826781,
+          "username": "carol",
+          "public_email": null,
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:40:07.515Z",
+        "updated_at": "2026-09-24T10:40:07.515Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "f0829452b6d49df61e578ce3c1c2423e9af98873",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897409793,
+        "type": null,
+        "body": "Comment 14.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:43:50.315Z",
+        "updated_at": "2026-09-24T10:43:50.317Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "7ea7f243b39cded2fd24c85d11552c64f7e48bf4",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897411537,
+        "type": null,
+        "body": "Comment 15.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:43:58.841Z",
+        "updated_at": "2026-09-24T10:43:58.843Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "277adf14c83750149dd8319388af830dc2ac3be9",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897428043,
+        "type": null,
+        "body": "Comment 16.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:46:43.637Z",
+        "updated_at": "2026-09-24T10:46:43.670Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "8ffe2449d070ce4fea1224fc69e6aa1480aa4d45",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897428505,
+        "type": null,
+        "body": "Comment 17.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:46:48.831Z",
+        "updated_at": "2026-09-24T10:46:48.833Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "db0b30e6d9e178f026ee7d635ca15d350919daa1",
+    "individual_note": false,
+    "resolvable": true,
+    "resolved": true,
+    "notes": [
+      {
+        "id": 3897462430,
+        "type": "DiffNote",
+        "body": "Comment 18.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:53:44.409Z",
+        "updated_at": "2026-09-24T10:53:51.494Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "commit_id": null,
+        "position": {
+          "base_sha": "c1c0a9f1f0fd33d96b9aa47c690734e8628c6847",
+          "start_sha": "c1c0a9f1f0fd33d96b9aa47c690734e8628c6847",
+          "head_sha": "315028906e2a7ad27ce6bce3b4d72f4f5c142633",
+          "old_path": "src/Dumper.php",
+          "new_path": "src/Dumper.php",
+          "position_type": "text",
+          "old_line": null,
+          "new_line": 320,
+          "line_range": {
+            "start": {
+              "old_line": null,
+              "new_line": 291,
+              "type": "new"
+            },
+            "end": {
+              "old_line": null,
+              "new_line": 317,
+              "type": "new"
+            }
+          }
+        },
+        "resolvable": true,
+        "resolved": true,
+        "resolved_at": "2026-09-24T10:53:51.494Z",
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "2645dccbd20043b22c268989d578465c0fd5be35",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897463244,
+        "type": null,
+        "body": "Comment 19.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:53:51.513Z",
+        "updated_at": "2026-09-24T10:53:51.518Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "12c203315d5122320e2b77d4f867c2933fa4d84b",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897463358,
+        "type": null,
+        "body": "Comment 20.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:53:52.571Z",
+        "updated_at": "2026-09-24T10:53:52.574Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "5a8fcd511e06b7a49ae9d36faa079cfce4d44c35",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897473653,
+        "type": null,
+        "body": "Comment 21.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T10:55:49.317Z",
+        "updated_at": "2026-09-24T10:55:49.319Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "67f450ca6aa3c85865de92b7a9d0bdb39f77f8ac",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897523750,
+        "type": null,
+        "body": "Comment 22.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T11:05:19.821Z",
+        "updated_at": "2026-09-24T11:05:19.823Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "75e1a7d62ab990cde091dc0f37aabfb17606365a",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897524353,
+        "type": null,
+        "body": "Comment 23.\nSecond line.",
+        "author": {
+          "id": 21826781,
+          "username": "carol",
+          "public_email": null,
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T11:05:26.518Z",
+        "updated_at": "2026-09-24T11:05:26.520Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "9a638ee4e54b6ad396ffe71c4fd3adb3f32854e6",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897524464,
+        "type": null,
+        "body": "Comment 24.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T11:05:27.617Z",
+        "updated_at": "2026-09-24T11:05:27.619Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "9e8d069fedaaf08bbade55dd8d4871f4c80f70eb",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897526538,
+        "type": null,
+        "body": "Comment 25.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T11:05:49.161Z",
+        "updated_at": "2026-09-24T11:05:49.162Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "4d5595e193add67cde078f065ecd421f98af8b34",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3897539175,
+        "type": null,
+        "body": "Comment 26.\nSecond line.",
+        "author": {
+          "id": 21826781,
+          "username": "carol",
+          "public_email": null,
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T11:08:17.186Z",
+        "updated_at": "2026-09-24T11:08:17.186Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "a3c7abcd5d0da9e5a1dacb96d516cb18a32ec431",
+    "individual_note": false,
+    "resolvable": true,
+    "resolved": true,
+    "notes": [
+      {
+        "id": 3897539216,
+        "type": "DiffNote",
+        "body": "Comment 27.\nSecond line.",
+        "author": {
+          "id": 21826781,
+          "username": "carol",
+          "public_email": null,
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-24T11:08:17.710Z",
+        "updated_at": "2026-09-25T10:48:30.811Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "commit_id": null,
+        "position": {
+          "base_sha": "c1c0a9f1f0fd33d96b9aa47c690734e8628c6847",
+          "start_sha": "c1c0a9f1f0fd33d96b9aa47c690734e8628c6847",
+          "head_sha": "315028906e2a7ad27ce6bce3b4d72f4f5c142633",
+          "old_path": "src/Dumper.php",
+          "new_path": "src/Dumper.php",
+          "position_type": "text",
+          "old_line": null,
+          "new_line": 300,
+          "line_range": null
+        },
+        "resolvable": true,
+        "resolved": true,
+        "resolved_at": "2026-09-25T10:48:30.811Z",
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "30a301f606c10795c4a4e75efd9fcee2c453eb63",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3903448152,
+        "type": null,
+        "body": "Comment 28.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-25T10:48:20.330Z",
+        "updated_at": "2026-09-25T10:48:20.331Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "90c7b46e41f6472ff2795f97284090fe344c1699",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3903448830,
+        "type": null,
+        "body": "Comment 29.\nSecond line.",
+        "author": {
+          "id": 5054237,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-25T10:48:30.977Z",
+        "updated_at": "2026-09-25T10:48:30.983Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "12649bd2a47eea9b2d687e623f698916111baf47",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3903646520,
+        "type": null,
+        "body": "Comment 30.\nSecond line.",
+        "author": {
+          "id": 1786152,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-25T11:28:39.492Z",
+        "updated_at": "2026-09-25T11:28:39.492Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "b42325e4391bbef39e6090c56ef5ca5090eeedf9",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3903660405,
+        "type": null,
+        "body": "Comment 31.\nSecond line.",
+        "author": {
+          "id": 33374274,
+          "username": "bob",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-25T11:31:35.761Z",
+        "updated_at": "2026-09-25T11:32:35.189Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "4062322c146e791483cbf24db22d9fed9d768387",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3903660436,
+        "type": null,
+        "body": "Comment 32.\nSecond line.",
+        "author": {
+          "id": 33374274,
+          "username": "bob",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-25T11:31:36.325Z",
+        "updated_at": "2026-09-25T11:31:36.335Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "ee7ccf726d9b89b0ffe0d97df6a2d2b4f3adead7",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3916152506,
+        "type": null,
+        "body": "Comment 33.\nSecond line.",
+        "author": {
+          "id": 1786152,
+          "username": "alice",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-28T11:27:18.750Z",
+        "updated_at": "2026-09-28T11:27:18.750Z",
+        "system": false,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "8ada01f94703e1c4dabd9589d1cd18cddd79f4a5",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3916471546,
+        "type": null,
+        "body": "Comment 34.\nSecond line.",
+        "author": {
+          "id": 2935693,
+          "username": "carol",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-28T12:21:43.971Z",
+        "updated_at": "2026-09-28T12:21:43.977Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "d8dd6cba4047a22de3f0596040c40eb6eb1a62d9",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3916471667,
+        "type": null,
+        "body": "Comment 35.\nSecond line.",
+        "author": {
+          "id": 2935693,
+          "username": "carol",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-28T12:21:45.420Z",
+        "updated_at": "2026-09-28T12:21:45.422Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  },
+  {
+    "id": "2afeb6acad582d14d0a0bb19c4c6d227457ac69d",
+    "individual_note": true,
+    "resolvable": false,
+    "notes": [
+      {
+        "id": 3916532920,
+        "type": null,
+        "body": "Comment 36.\nSecond line.",
+        "author": {
+          "id": 2935693,
+          "username": "carol",
+          "public_email": "x",
+          "name": "x",
+          "state": "active",
+          "locked": false,
+          "avatar_url": "x",
+          "web_url": "https://example.test/x"
+        },
+        "created_at": "2026-09-28T12:32:42.497Z",
+        "updated_at": "2026-09-28T12:32:42.498Z",
+        "system": true,
+        "noteable_id": 537767194,
+        "noteable_type": "MergeRequest",
+        "project_id": 34675721,
+        "resolvable": false,
+        "confidential": false,
+        "internal": false,
+        "noteable_iid": 3962
+      }
+    ]
+  }
+]

@@ -1,0 +1,149 @@
+{
+  "data": {
+    "repository": {
+      "pullRequests": {
+        "nodes": [
+          {
+            "id": "PR_kwDOAAb9Ss8AAAABFgX71A",
+            "number": 12,
+            "title": "Tidy the dumper",
+            "url": "https://github.com/acme/app/pull/12",
+            "state": "MERGED",
+            "author": {
+              "login": "alice"
+            },
+            "baseRefOid": "f8e2d141185d86c0db4d833b0ee23af9a379ff47",
+            "headRefOid": "e25895125a800deba1db2e7f3274ccb2eecde3e1",
+            "headRefName": "feature/tidy",
+            "comments": {
+              "nodes": [
+                {
+                  "id": "IC_kwDOAAb9Ss8AAAABXjclcw",
+                  "databaseId": 5875639667,
+                  "author": {
+                    "login": "bob"
+                  },
+                  "body": "Comment 1.\nSecond line.",
+                  "createdAt": "2026-09-28T17:59:54Z"
+                },
+                {
+                  "id": "IC_kwDOAAb9Ss8AAAABXkSgDA",
+                  "databaseId": 5876523020,
+                  "author": {
+                    "login": "bob"
+                  },
+                  "body": "Comment 2.\nSecond line.",
+                  "createdAt": "2026-09-28T18:58:52Z"
+                },
+                {
+                  "id": "IC_kwDOAAb9Ss8AAAABXkTjmA",
+                  "databaseId": 5876540312,
+                  "author": {
+                    "login": "bob"
+                  },
+                  "body": "Comment 3.\nSecond line.",
+                  "createdAt": "2026-09-28T19:00:04Z"
+                }
+              ]
+            },
+            "reviewThreads": {
+              "nodes": [
+                {
+                  "id": "PRRT_kwDOAAb9Ss6muVwM",
+                  "isResolved": true,
+                  "isOutdated": true,
+                  "viewerCanResolve": false,
+                  "viewerCanUnresolve": false,
+                  "viewerCanReply": true,
+                  "path": "src/Dumper.php",
+                  "line": null,
+                  "originalLine": 1555,
+                  "startLine": null,
+                  "diffSide": "RIGHT",
+                  "comments": {
+                    "nodes": [
+                      {
+                        "id": "PRRC_kwDOAAb9Ss71xkN-",
+                        "databaseId": 4123411326,
+                        "author": {
+                          "login": "carol"
+                        },
+                        "body": "Comment 4.\nSecond line.",
+                        "createdAt": "2026-09-28T14:34:40Z"
+                      },
+                      {
+                        "id": "PRRC_kwDOAAb9Ss71xnrh",
+                        "databaseId": 4123425505,
+                        "author": {
+                          "login": "carol"
+                        },
+                        "body": "Comment 5.\nSecond line.",
+                        "createdAt": "2026-09-28T14:35:56Z"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRRT_current",
+                  "isResolved": false,
+                  "isOutdated": false,
+                  "viewerCanResolve": false,
+                  "viewerCanUnresolve": false,
+                  "viewerCanReply": true,
+                  "path": "src/Dumper.php",
+                  "line": 42,
+                  "originalLine": 42,
+                  "startLine": null,
+                  "diffSide": "RIGHT",
+                  "comments": {
+                    "nodes": [
+                      {
+                        "id": "PRRC_PRRT_current_0",
+                        "author": {
+                          "login": "bob"
+                        },
+                        "body": "Rename this.",
+                        "createdAt": "2026-09-28T10:00:00Z"
+                      },
+                      {
+                        "id": "PRRC_PRRT_current_1",
+                        "author": {
+                          "login": "alice"
+                        },
+                        "body": "Done.",
+                        "createdAt": "2026-09-28T11:00:00Z"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRRT_left",
+                  "isResolved": false,
+                  "isOutdated": false,
+                  "viewerCanResolve": false,
+                  "viewerCanUnresolve": false,
+                  "viewerCanReply": true,
+                  "path": "src/Dumper.php",
+                  "line": 7,
+                  "originalLine": 7,
+                  "startLine": null,
+                  "diffSide": "LEFT",
+                  "comments": {
+                    "nodes": [
+                      {
+                        "id": "PRRC_PRRT_left_0",
+                        "author": null,
+                        "body": "Why was this removed?",
+                        "createdAt": "2026-09-28T10:00:00Z"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

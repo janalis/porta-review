@@ -1,0 +1,27 @@
+#!/usr/bin/env php
+<?php
+
+// A forge CLI (`gh`, `glab`) or `curl`, faked for the tests: every call is
+// logged to $FAKE_FORGE_DIR/calls.jsonl as {argv, stdin}, and answered from
+// the queue $FAKE_FORGE_DIR/<n>.out — stdout — with <n>.code as its exit code
+// (0 when absent) and <n>.err as its stderr. <n> counts the calls from 1.
+// With $FAKE_FORGE_DIR/routes.json — {"needle": "file"} — a call whose argv or
+// stdin contains a needle is answered with that file instead, first match
+// wins: for a session whose number of reloads is not the test's to fix.
+
+$dir = (string) getenv('FAKE_FORGE_DIR');
+$stdin = stream_get_contents(STDIN);
+file_put_contents($dir.'/calls.jsonl', json_encode(['argv' => array_slice($argv, 1), 'stdin' => $stdin, 'name' => basename($argv[0])])."\n", FILE_APPEND);
+$n = count(file($dir.'/calls.jsonl'));
+$routes = is_file("$dir/routes.json") ? json_decode(file_get_contents("$dir/routes.json"), true) : [];
+foreach ($routes as $needle => $file) {
+    if (str_contains(implode(' ', $argv).' '.$stdin, $needle)) {
+        echo file_get_contents("$dir/$file");
+        exit(0);
+    }
+}
+if (is_file("$dir/$n.err")) {
+    fwrite(STDERR, file_get_contents("$dir/$n.err"));
+}
+echo is_file("$dir/$n.out") ? file_get_contents("$dir/$n.out") : '';
+exit(is_file("$dir/$n.code") ? (int) file_get_contents("$dir/$n.code") : 0);

@@ -1,0 +1,15 @@
+{
+  "id": 537767194,
+  "iid": 7,
+  "project_id": 34675721,
+  "title": "Tidy the dumper",
+  "state": "merged",
+  "web_url": "https://gitlab.com/acme/app/-/merge_requests/7",
+  "source_branch": "docs/glab-skill-contributing",
+  "diff_refs": {
+    "base_sha": "c1c0a9f1f0fd33d96b9aa47c690734e8628c6847",
+    "head_sha": "315028906e2a7ad27ce6bce3b4d72f4f5c142633",
+    "start_sha": "c1c0a9f1f0fd33d96b9aa47c690734e8628c6847"
+  },
+  "sha": "315028906e2a7ad27ce6bce3b4d72f4f5c142633"
+}

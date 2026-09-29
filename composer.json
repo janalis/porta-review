@@ -1,0 +1,24 @@
+{
+    "name": "porta/review",
+    "description": "Code review conversations — GitHub pull requests, GitLab merge requests and local agent reviews — in a view, in the diff and in the editor",
+    "type": "porta-plugin",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.5",
+        "symfony/filesystem": "^8.2",
+        "symfony/process": "^8.2",
+        "symfony/tui": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Porta\\ReviewPlugin\\": "src/"
+        }
+    },
+    "extra": {
+        "porta": {
+            "requires": [
+                "git"
+            ]
+        }
+    }
+}
