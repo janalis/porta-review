@@ -12,6 +12,7 @@ use Porta\ReviewPlugin\Model\Comment;
 use Porta\ReviewPlugin\Model\Side;
 use Porta\ReviewPlugin\Model\Thread;
 use Porta\ReviewPlugin\Widget\ReviewContentWidget;
+use Porta\Tests\Support\CompactScreen;
 use Porta\Tests\Support\RendersWidget;
 use Porta\Ui\Theme\Styles;
 use Symfony\Component\Tui\Render\RenderContext;
@@ -25,7 +26,7 @@ final class ReviewContentWidgetTest extends TestCase
 
     private function widget(): ReviewContentWidget
     {
-        $widget = new ReviewContentWidget(new Translator('en'), Styles::dark());
+        $widget = new ReviewContentWidget(new Translator('en'), Styles::dark(), CompactScreen::density());
         foreach (['reply', 'resolve', 'comment', 'open'] as $verb) {
             $widget->bind($verb, function (?Anchor $anchor, ?Thread $thread) use ($verb): void {
                 $this->acted[] = $verb.' '.(null === $anchor ? '-' : $anchor->path.':'.$anchor->line.':'.$anchor->side->value.':'.$anchor->lineText).' '.($thread->id ?? '-');
@@ -74,7 +75,7 @@ final class ReviewContentWidgetTest extends TestCase
 
         $screen = $this->screen($widget);
 
-        $this->assertSame('src/A.php', \trim($screen[0]));
+        $this->assertSame('src/A.php                                 S show-resolved', \trim($screen[0]), 'the title, and the toolbar toggle');
         $this->assertSame(
             [
                 '@@ -1,4 +1,4 @@ class A',
@@ -155,14 +156,14 @@ final class ReviewContentWidgetTest extends TestCase
         $widget = $this->widget();
         $widget->showConversation('PR #12 · Tidy', [new Comment('carol', 'Looks good.', '2026-09-28T11:00:00Z')]);
         $screen = $this->screen($widget, 6);
-        $this->assertSame(['PR #12 · Tidy', 'carol 2026-09-28 11:00', 'Looks good.'], \array_map(trim(...), \array_slice($screen, offset: 0, length: 3)));
+        $this->assertSame(['PR #12 · Tidy                             S show-resolved', 'carol 2026-09-28 11:00', 'Looks good.'], \array_map(trim(...), \array_slice($screen, offset: 0, length: 3)));
         $this->assertFalse($widget->focusThread('nope'));
 
         $widget->showConversation('PR #12', []);
         $this->assertStringContainsString('No comments yet — press c to write one', $this->screen($widget, 4)[1]);
 
         $widget->clearContent();
-        $this->assertSame(['Review', '', '', ''], \array_map(trim(...), $this->screen($widget, 4)));
+        $this->assertSame(['Review                                    S show-resolved', '', '', ''], \array_map(trim(...), $this->screen($widget, 4)));
         $widget->handleInput('r');
         $this->assertSame([], $this->acted, 'nothing to act on');
     }
@@ -203,5 +204,56 @@ final class ReviewContentWidgetTest extends TestCase
 
         $this->assertSame(['next', 'exit'], $calls);
         $this->assertTrue($widget->isVerticallyExpanded());
+    }
+
+    /**
+     * The toolbar, as the git diff's: a boxed toggle where the screen is roomy,
+     * none where the pane is too narrow — and the toggle answers its key, a
+     * click, the pointer and the tooltip.
+     */
+    public function testTheShowResolvedToggleIsAToolbarButton(): void
+    {
+        $toggled = 0;
+        $widget = new ReviewContentWidget(new Translator('en'), Styles::dark());
+        foreach (['open'] as $verb) {
+            $widget->bind($verb, function (?Anchor $anchor, ?Thread $thread) use ($verb): void {
+                $this->acted[] = $verb.' '.(null === $anchor ? '-' : $anchor->path.':'.$anchor->line);
+            });
+        }
+        $widget->onToggleResolved(static function () use (&$toggled): void {
+            ++$toggled;
+        });
+        $widget->showFile('src/A.php', self::diff(), '', []);
+        $rows = fn (int $cols = 60): array => \array_map(rtrim(...), $this->rows($widget->render(new RenderContext($cols, 10))));
+
+        $boxed = $rows();
+        $this->assertStringContainsString('S show-resolved', $boxed[1], 'boxed: the caption on the middle row');
+        $this->assertStringContainsString('src/A.php', $boxed[1], 'and the title beside it');
+        $this->assertStringContainsString('@@ -1,4 +1,4 @@', $boxed[3], 'the rows start under the three-row header');
+        $this->assertSame(' src/A.php', $rows(12)[0], 'too narrow for the toggle: the title alone');
+        $boxed = $rows();
+
+        $zone = \mb_strpos($boxed[1], needle: 'S show-resolved');
+        \assert(false !== $zone, description: 'the toggle is drawn');
+        $this->assertTrue($widget->hoverHeader(1, $zone), 'the pointer on the toggle tints it');
+        $this->assertFalse($widget->hoverHeader(1, $zone), 'no change, no repaint');
+        $this->assertTrue($widget->clearHeaderHover());
+        $this->assertStringContainsString('Show resolved conversations · off', $widget->tooltipAt(0, $zone)->text ?? '');
+        $this->assertNull($widget->tooltipAt(0, 0), 'the title is no button');
+        $this->assertNull($widget->tooltipAt(5, $zone), 'nor is a row under the header');
+
+        $widget->handleClick(1, $zone);
+        $widget->handleClick(1, 0); // the title: nothing
+        $widget->handleInput('s');
+        $this->assertSame(2, $toggled, 'a click on the toggle, and its key');
+
+        $widget->showResolved(true);
+        $widget->showResolved(true);
+        $this->assertStringContainsString('Show resolved conversations · on', $widget->tooltipAt(0, $zone)->text ?? '');
+
+        $widget->handleClick(4, 0); // a row under the header: the caret goes there
+        $widget->setFocused(true);
+        $widget->handleInput('o');
+        $this->assertSame(['open src/A.php:1'], $this->acted);
     }
 }

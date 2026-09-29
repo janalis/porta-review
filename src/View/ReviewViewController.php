@@ -49,6 +49,8 @@ final class ReviewViewController implements ContributedView
 
     private int $generation = 0;
 
+    private readonly ReviewMouseRouter $pointer;
+
     /** @param \Closure(): bool $showResolved */
     public function __construct(
         private readonly ViewServices $services,
@@ -71,7 +73,8 @@ final class ReviewViewController implements ContributedView
             ->bind('resolve', fn (string $id) => $this->toggleResolved($this->store->review?->thread($id)))
             ->bind('open', fn (string $id) => $this->openInEditor($this->store->review?->thread($id)?->anchor))
             ->bind('comment', $this->writeToReview(...))
-            ->bind('refresh', fn () => $this->store->refresh());
+            ->bind('refresh', fn () => $this->store->refresh())
+            ->bind('toggle_resolved', $this->toggleShowResolved(...));
         $list->onFocusNext(fn () => $this->services->host->focus($this->reply))->onExit($this->close(...));
         $reply
             ->onSubmit($this->send(...))
@@ -82,6 +85,8 @@ final class ReviewViewController implements ContributedView
             ->bind('resolve', fn (?Anchor $anchor, ?Thread $thread) => $this->toggleResolved($thread))
             ->bind('comment', fn (?Anchor $anchor, ?Thread $thread) => null === $anchor ? $this->replyTo($thread) : $this->commentAt($anchor))
             ->bind('open', fn (?Anchor $anchor, ?Thread $thread) => $this->openInEditor($anchor ?? $thread?->anchor));
+        $content->onToggleResolved($this->toggleShowResolved(...));
+        $this->pointer = new ReviewMouseRouter($services->hit, $services->host, $list, $reply, $content);
         $content->onFocusNext(fn () => $this->services->host->focus($this->list))->onExit($this->close(...));
         $store->onChange($this->sync(...));
     }
@@ -138,7 +143,7 @@ final class ReviewViewController implements ContributedView
     #[\Override]
     public function pointer(): ?ViewPointer
     {
-        return null;
+        return $this->pointer;
     }
 
     #[\Override]
@@ -192,6 +197,7 @@ final class ReviewViewController implements ContributedView
     {
         $review = $this->store->review;
         $this->list->show($review, $this->store->loading, $this->store->error, ($this->showResolved)());
+        $this->content->showResolved(($this->showResolved)());
         if (!$this->open || $this->store->loading) {
             return;
         }
@@ -213,6 +219,17 @@ final class ReviewViewController implements ContributedView
             return;
         }
         $this->loadFile($review, $this->shownPath, $this->content->currentThread()?->id);
+    }
+
+    /**
+     * The toolbar's show-resolved toggle, like the git diff's hide-whitespace:
+     * the setting is written — so it persists, and the editor follows through
+     * the setting hook — and the view re-filters what it already has.
+     */
+    private function toggleShowResolved(): void
+    {
+        $this->api->changeSetting('showResolved', !($this->showResolved)());
+        $this->sync();
     }
 
     private function select(string $id): void

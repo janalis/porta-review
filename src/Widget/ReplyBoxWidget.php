@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Porta\ReviewPlugin\Widget;
 
 use Porta\I18n\Translator;
-use Porta\Support\AnsiText;
 use Porta\Ui\CaretVisibility;
 use Porta\Ui\CursorStyle;
 use Porta\Ui\MultilineInput;
-use Porta\Ui\Role;
+use Porta\Ui\ScreenDensity;
 use Porta\Ui\Theme\Styles;
+use Porta\Widget\HoverableList;
 use Porta\Widget\PaneNavigationCallbacks;
 use Porta\Widget\Render\FieldBox;
 use Porta\Widget\Render\FieldSpec;
@@ -18,6 +18,7 @@ use Porta\Widget\Render\FieldState;
 use Porta\Widget\Render\HeaderRenderer;
 use Porta\Widget\Render\MenuOverlayHost;
 use Porta\Widget\Render\MenuOverlayHostTrait;
+use Porta\Widget\Support\HoverTrait;
 use Porta\Widget\Support\PanelWidth;
 use Porta\Widget\Support\StylesDefault;
 use Symfony\Component\Tui\Input\Key;
@@ -35,8 +36,9 @@ use Symfony\Component\Tui\Widget\KeybindingsTrait;
  * the review itself — and says which in its legend, so the reader knows where
  * the words will land before sending them. With no target it is disabled.
  */
-final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface, MenuOverlayHost
+final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface, HoverableList, MenuOverlayHost
 {
+    use HoverTrait;
     use MenuOverlayHostTrait;
     use FocusableTrait;
     use KeybindingsTrait;
@@ -54,15 +56,56 @@ final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface,
     /** @var (\Closure(string): void)|null */
     private ?\Closure $onSubmit = null;
 
+    /**
+     * The Send button's height in the last render: a box, or one row on a
+     * compact screen ({@see FieldBox::rowsFor()}) — the commit button's rule.
+     */
+    private int $controlRows = FieldBox::ROWS;
+
+    private readonly ScreenDensity $density;
+
     public function __construct(
         private readonly Translator $translator,
         int $width = 44,
         ?Styles $styles = null,
         ?CursorStyle $cursorStyle = null,
+        ?ScreenDensity $density = null,
     ) {
         $this->width = $width;
         $this->initStyles($styles);
         $this->input = new MultilineInput($cursorStyle);
+        $this->density = $density ?? new ScreenDensity();
+    }
+
+    /** The Send button's first row, widget-relative: under the header and the framed text. */
+    public function buttonRow(): int
+    {
+        return 1 + self::TEXT_ROWS + 2;
+    }
+
+    /** The pointer over the Send button while it can send; a disabled button never reacts. */
+    #[\Override]
+    public function hoverRow(int $relRow): bool
+    {
+        return $this->setHovered($this->onButton($relRow) && $this->ready() ? $this->buttonRow() : null);
+    }
+
+    /** A click on the button sends, as Ctrl+Enter does. */
+    public function handleClick(int $relRow): void
+    {
+        if ($this->onButton($relRow)) {
+            $this->submit();
+        }
+    }
+
+    private function onButton(int $relRow): bool
+    {
+        return $relRow >= $this->buttonRow() && $relRow < ($this->buttonRow() + $this->controlRows);
+    }
+
+    private function ready(): bool
+    {
+        return '' !== $this->target && '' !== \trim($this->input->value());
     }
 
     /** @param \Closure(string): void $onSubmit the text, trimmed and never empty */
@@ -156,12 +199,18 @@ final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface,
             $width,
             $this->styles,
         ));
-        $ready = $active && '' !== \trim($this->input->value());
-        $lines[] = AnsiText::truncate(
-            ' '.$this->styles->of($ready ? Role::Bright : Role::Faint)->apply($this->translator->trans('Send')).'  '.$this->styles->of(Role::Faint)->apply('Ctrl+Enter'),
+        // The commit box's button: boxed, or one row on a compact screen;
+        // dashed while there is nothing to send, its key in its border.
+        $this->controlRows = FieldBox::rowsFor($this->density->current());
+        \array_push($lines, ...FieldBox::button(
+            $this->translator->trans('Send'),
+            $this->ready() ? FieldState::Idle : FieldState::Disabled,
+            $this->hoveredIndex === $this->buttonRow(),
             $width,
-            pad: true,
-        );
+            $this->controlRows,
+            $this->styles,
+            trailing: 'Ctrl+Enter',
+        ));
 
         return $lines;
     }

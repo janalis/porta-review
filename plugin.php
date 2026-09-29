@@ -111,6 +111,8 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
             match ($key) {
                 'editorDisplay' => $publisher->publish(),
                 'refreshSeconds' => $refresher->rearm(),
+                // What is shown, not what the forge says: no re-read.
+                'showResolved' => $publisher->publish(),
                 default => $store->refresh(),
             };
         });
@@ -124,9 +126,9 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
             $width = 48;
             $list = new ReviewListWidget($services->translator, $width, $services->styles);
             $list->setId('review-threads');
-            $reply = new ReplyBoxWidget($services->translator, $width, $services->styles, $services->cursorStyle);
+            $reply = new ReplyBoxWidget($services->translator, $width, $services->styles, $services->cursorStyle, $services->density);
             $reply->setId('review-reply');
-            $content = new ReviewContentWidget($services->translator, $services->styles);
+            $content = new ReviewContentWidget($services->translator, $services->styles, $services->density);
             $content->setId('review-diff');
 
             return $view = new ReviewViewController($services, $api, $store, $git, $list, $reply, $content, $showResolved);

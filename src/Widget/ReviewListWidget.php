@@ -48,6 +48,9 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
     use PanelRowStyle;
     use PanelWidth;
 
+    /** The title and the status line above the entries. */
+    private const int HEADER_ROWS = 2;
+
     /** The entry id the conversation takes — no thread id can be empty. */
     public const string CONVERSATION = '';
 
@@ -110,6 +113,18 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
             $this->list->select($this->firstEntry(0, 1) ?? 0);
         }
         $this->invalidate();
+    }
+
+    /** A click on an entry selects and shows it, as Enter does; a heading or the header is no target. */
+    public function handleClick(int $relRow): void
+    {
+        $index = $this->list->scroll() + $relRow - self::HEADER_ROWS;
+        if ($relRow < self::HEADER_ROWS || null === ($this->rows[$index]['id'] ?? null)) {
+            return;
+        }
+        $this->list->select($index);
+        $this->invalidate();
+        $this->choose();
     }
 
     /** The selected entry: a thread id, '' for the conversation, null when the list is empty. */
@@ -212,7 +227,7 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
             }
             // Refresh and a comment on the review need no entry; the rest act on the selected one.
             $id = $this->selectedId();
-            if (null !== $id || 'refresh' === $action || 'comment' === $action) {
+            if (null !== $id || \in_array($action, ['refresh', 'comment', 'toggle_resolved'], strict: true)) {
                 $this->verbs[$action]($id ?? self::CONVERSATION);
             }
 
@@ -294,6 +309,7 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
             'open' => ['o'],
             'comment' => ['c'],
             'refresh' => ['f5', 'shift+r'],
+            'toggle_resolved' => ['s'],
             'focus_next_pane' => [Key::TAB],
             'exit_view' => [Key::ESCAPE],
         ];

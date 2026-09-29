@@ -11,9 +11,11 @@ use Porta\Editor\OpenFocus;
 use Porta\Ide;
 use Porta\Layout\ViewRegions;
 use Porta\Plugin\Lifecycle\PluginLifecycle;
+use Porta\ReviewPlugin\View\ReviewMouseRouter;
 use Porta\Tests\Support\ClearsPortaLsp;
 use Porta\Tests\Support\Paint;
 use Porta\Tests\Support\PreservesPath;
+use Porta\Tests\Support\Probe;
 use Porta\Tests\Support\RunsIde;
 use Porta\Tests\Support\Services;
 use Porta\Tests\Support\TempProject;
@@ -161,7 +163,7 @@ final class LocalReviewE2eTest extends TestCase
                     Services::resolve($ide, CommandRegistry::class)->run('review:open');
                     $this->awaitPainted($tui, $terminal, 'Review (2 open)');
                     $this->assertSame($tui->getById('review-threads'), $view?->focusTarget());
-                    $this->assertNull($view?->pointer());
+                    $this->assertInstanceOf(ReviewMouseRouter::class, $view?->pointer());
                     $this->assertNull($view?->contextMenus());
 
                     // The conversation is selected: none of the thread verbs has a thread.
@@ -276,8 +278,12 @@ final class LocalReviewE2eTest extends TestCase
 
                     $project->write('.porta/reviews/agent/t9/thread.json', '{"path":"src/A.php","line":1}');
                     $project->write('.porta/reviews/agent/t9/1--claude.md', 'Header?');
-                    $lifecycle->onPluginSettingChanged('review', 'showResolved', true);
+                    $lifecycle->onPluginSettingChanged('review', 'provider', 'local'); // where reviews come from: re-read
                     $this->await(static fn (): bool => \array_key_exists(0, $decorations->commentMarks), what: 'the re-read');
+
+                    $decorations->setCommentMarks([]);
+                    $lifecycle->onPluginSettingChanged('review', 'showResolved', true); // what is shown: repainted, not re-read
+                    $this->assertArrayHasKey(0, $decorations->commentMarks, 'republished at once');
                 },
             ],
         );
@@ -377,13 +383,99 @@ final class LocalReviewE2eTest extends TestCase
                     $before = $list->width();
 
                     $row = $rect->row + 3;
+                    $tui->handleInput(\sprintf("\x1b[<35;%d;%dM", $rect->col + 1, $row)); // a bare move onto it first
                     $tui->handleInput(\sprintf("\x1b[<0;%d;%dM", $rect->col + 1, $row));
                     $tui->handleInput(\sprintf("\x1b[<32;%d;%dM", $rect->col + 11, $row));
                     $tui->handleInput(\sprintf("\x1b[<0;%d;%dm", $rect->col + 11, $row));
                     $this->frame($tui);
 
+                    // Like every other divider, it thickens under the pointer before the drag.
+                    $this->assertStringContainsString(Glyphs::PANE_DIVIDER_ACTIVE, Paint::lines($separator, new RenderContext(1, 5))[0], 'heavy under the pointer, as the others are');
                     $this->assertSame($before + 10, $list->width(), 'the list follows the drag');
                     $this->assertSame($list->width(), $tui->getById('review-reply')->width(), 'and the reply box with it');
+                },
+            ],
+        );
+
+        $this->addToAssertionCount(1);
+    }
+
+    /**
+     * The view by mouse: a click on a thread shows it, a click on Send sends,
+     * and the toolbar's show-resolved toggle — a click, or `s` — brings the
+     * resolved threads back into the list and the pane, and persists.
+     */
+    public function testTheViewAnswersTheMouseAndTheShowResolvedToggle(): void
+    {
+        \putenv('PATH=/nonexistent');
+        $project = self::project();
+        $project->write('.porta/reviews/agent/t0/thread.json', '{"path":"src/A.php","line":2}');
+        $project->write('.porta/reviews/agent/t0/1--claude.md', 'Settled already.');
+        $project->write('.porta/reviews/agent/t0/resolved', '');
+
+        $this->runIde(
+            $project,
+            $project->path('src/A.php'),
+            [
+                200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide) use ($project): void {
+                    Services::resolve($ide, CommandRegistry::class)->run('review:open');
+                    $this->awaitPainted($tui, $terminal, 'Review (1 open)');
+                    $this->frame($tui);
+                    $renderer = Services::resolve($ide, Renderer::class);
+                    $click = static function (int $row, int $col) use ($tui): void {
+                        $tui->handleInput(\sprintf("\x1b[<0;%d;%dM", $col, $row));
+                        $tui->handleInput(\sprintf("\x1b[<0;%d;%dm", $col, $row));
+                    };
+                    $list = $tui->getById('review-threads');
+                    $this->assertFalse($list->selectId('t0'), 'resolved: hidden to begin with');
+
+                    // The list's fourth row is the thread (title, status, conversation, the file heading).
+                    $at = $renderer->getWidgetRect($list);
+                    \assert(null !== $at, description: 'the list was painted');
+                    $click($at->row + 1, $at->col + 3); // the list's title: no entry, nothing happens
+                    $click($at->row + 4, $at->col + 3); // the file heading: none either
+                    $this->assertSame('', $list->selectedId());
+                    $click($at->row + 5, $at->col + 3);
+                    $this->awaitPainted($tui, $terminal, '$total += $item;');
+                    $this->assertSame('t1', $list->selectedId());
+
+                    $reply = $tui->getById('review-reply');
+                    $tui->handleInput('r');
+                    $tui->handleInput('Clicked');
+                    $this->frame($tui);
+                    $box = $renderer->getWidgetRect($reply);
+                    \assert(null !== $box, description: 'the reply box was painted');
+                    $tui->handleInput(\sprintf("\x1b[<35;%d;%dM", $box->col + 5, $box->row + $reply->buttonRow() + 1)); // the pointer on the button
+                    $this->frame($tui);
+                    $this->assertSame($reply->buttonRow(), Probe::get($reply, 'hoveredIndex'), 'a ready button tints under the pointer');
+                    $click($box->row + $reply->buttonRow() + 1, $box->col + 5); // its first row, boxed or compact
+                    $this->await(static fn (): bool => 2 === \count((array) \glob($project->path('.porta/reviews/agent/t1/*.md'))), what: 'the click to send');
+
+                    // The toolbar toggle on the pane's header.
+                    $content = $tui->getById('review-diff');
+                    $pane = $renderer->getWidgetRect($content);
+                    \assert(null !== $pane, description: 'the pane was painted');
+                    // The toggle's row: the only one on a short screen, the middle one boxed.
+                    $header = \array_map(AnsiUtils::stripAnsiCodes(...), Paint::lines($content, new RenderContext($pane->columns, 6)));
+                    $row = \array_key_first(\array_filter($header, static fn (string $line): bool => \str_contains($line, 'S show-resolved')));
+                    \assert(null !== $row, description: 'the toggle is drawn');
+                    $col = (int) \mb_strpos($header[$row], needle: 'S show-resolved');
+                    $tui->handleInput(\sprintf("\x1b[<35;%d;%dM", $pane->col + $col + 2, $pane->row + $row + 1));
+                    $click($pane->row + $row + 1, $pane->col + $col + 2);
+                    $this->frame($tui);
+                    $this->assertTrue($list->selectId('t0'), 'shown now');
+                    $this->assertTrue(
+                        (bool) \json_decode((string) \file_get_contents($project->path('.porta.json')), associative: true)['plugins']['review']['showResolved'],
+                        'and persisted, as the git toggles are',
+                    );
+
+                    $tui->setFocus($list);
+                    $tui->handleInput('s');
+                    $this->frame($tui);
+                    $this->assertFalse($list->selectId('t0'), '`s` hides them again');
+
+                    $click(row: 40, col: 200); // off every pane of the view's: the pointer passes it on
+                    $tui->handleInput(\sprintf("\x1b[<64;%d;%dM", $at->col + 3, $at->row + 5)); // a wheel notch: the panes scroll by key, it falls through
                 },
             ],
         );

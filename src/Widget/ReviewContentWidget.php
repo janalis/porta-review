@@ -12,16 +12,22 @@ use Porta\ReviewPlugin\Model\Comment;
 use Porta\ReviewPlugin\Model\Side;
 use Porta\ReviewPlugin\Model\Thread;
 use Porta\Support\AnsiText;
+use Porta\Ui\ClickZones;
 use Porta\Ui\Glyphs;
 use Porta\Ui\ListNavigation;
 use Porta\Ui\ListSelection;
 use Porta\Ui\Markup\MarkupParser;
+use Porta\Ui\Role;
+use Porta\Ui\ScreenDensity;
 use Porta\Ui\Theme\Styles;
+use Porta\Ui\Tooltip;
+use Porta\Ui\TooltipProvider;
 use Porta\Widget\PaneNavigationCallbacks;
-use Porta\Widget\Render\HeaderRenderer;
+use Porta\Widget\Render\FieldBox;
 use Porta\Widget\Render\MenuOverlayHost;
 use Porta\Widget\Render\MenuOverlayHostTrait;
 use Porta\Widget\Support\FillsPaneTrait;
+use Porta\Widget\Support\OptionTagState;
 use Porta\Widget\Support\PanelRowStyle;
 use Symfony\Component\Tui\Input\Key;
 use Symfony\Component\Tui\Render\RenderContext;
@@ -44,7 +50,7 @@ use Symfony\Component\Tui\Widget\VerticallyExpandableInterface;
  * comments wrap to, so the caret walks through a conversation as it walks
  * through code, and `r` / `x` act on the thread it is in.
  */
-final class ReviewContentWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface, MenuOverlayHost
+final class ReviewContentWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface, MenuOverlayHost, TooltipProvider
 {
     use MenuOverlayHostTrait;
     use FillsPaneTrait;
@@ -69,12 +75,134 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     /** @var array<string, \Closure(?Anchor, ?Thread): void> */
     private array $verbs = [];
 
+    /** Mirror of the view's show-resolved state, for the toolbar toggle. */
+    private bool $showResolved = false;
+
+    /** @var (\Closure(): void)|null the toggle was clicked or its key pressed */
+    private ?\Closure $onToggleResolved = null;
+
+    /** The toolbar toggle's columns in the last render. */
+    private readonly ClickZones $buttonZones;
+
+    /** The toggle under the pointer, or null. Visual only. */
+    private ?string $hoveredButton = null;
+
+    /** The header's height in the last render: a boxed toggle, or one row where the screen is short. */
+    private int $headerRows = 1;
+
+    private readonly ScreenDensity $density;
+
     public function __construct(
         private readonly Translator $translator,
         ?Styles $styles = null,
+        ?ScreenDensity $density = null,
     ) {
         $this->initStyles($styles);
         $this->list = new ListSelection();
+        $this->buttonZones = new ClickZones();
+        $this->density = $density ?? new ScreenDensity();
+    }
+
+    /** @param \Closure(): void $toggle */
+    public function onToggleResolved(\Closure $toggle): self
+    {
+        $this->onToggleResolved = $toggle;
+
+        return $this;
+    }
+
+    /** Reflect the view's show-resolved state on the toolbar toggle. */
+    // @mago-expect lint:no-boolean-flag-parameter -- the bool IS the state being mirrored.
+    public function showResolved(bool $on): void
+    {
+        if ($on !== $this->showResolved) {
+            $this->showResolved = $on;
+            $this->invalidate();
+        }
+    }
+
+    /**
+     * A click on the header toggles the button under it; a click on a row puts
+     * the caret there. Focus is the router's.
+     */
+    public function handleClick(int $relRow, int $relCol): void
+    {
+        if ($relRow < $this->headerRows) {
+            if (null !== $this->buttonZones->at($relCol) && null !== $this->onToggleResolved) {
+                ($this->onToggleResolved)();
+            }
+
+            return;
+        }
+        if ([] !== $this->rows) {
+            $this->list->select(\min(\count($this->rows) - 1, $this->list->scroll() + $relRow - $this->headerRows));
+            $this->invalidate();
+        }
+    }
+
+    /** Tint the toolbar toggle under the pointer (widget-relative); whether it changed. */
+    public function hoverHeader(int $relRow, int $relCol): bool
+    {
+        $hovered = $relRow >= 0 && $relRow < $this->headerRows ? $this->buttonZones->at($relCol) : null;
+        if ($hovered === $this->hoveredButton) {
+            return false;
+        }
+        $this->hoveredButton = $hovered;
+        $this->invalidate();
+
+        return true;
+    }
+
+    /** The pointer left the pane: drop the toolbar tint. */
+    public function clearHeaderHover(): bool
+    {
+        return $this->hoverHeader(-1, -1);
+    }
+
+    /** The toggle says what it does and whether it is on, as the git diff's do. */
+    #[\Override]
+    public function tooltipAt(int $row, int $col): ?Tooltip
+    {
+        $span = $row >= 0 && $row < $this->headerRows && null !== $this->buttonZones->at($col) ? $this->buttonZones->span('resolved') : null;
+        if (null === $span) {
+            return null;
+        }
+        $state = $this->showResolved ? $this->translator->trans('on') : $this->translator->trans('off');
+
+        return new Tooltip('review:resolved', $this->translator->trans('Show resolved conversations').' · '.$state, 0, $span[0], $span[1], $this->headerRows);
+    }
+
+    /**
+     * The title doubles as a toolbar, as the git diff pane's does: the title
+     * on the left, the show-resolved toggle on the right — boxed where the
+     * screen is roomy, a one-row tag where it is not, dropped where the pane
+     * is too narrow to seat it.
+     *
+     * @return list<string>
+     */
+    private function header(string $title, int $width): array
+    {
+        $this->buttonZones->clear();
+        $caption = \trim($this->translator->trans(' S show-resolved '));
+        $bar = $this->styles->of(Role::HeaderBar)->withBold();
+        $rows = FieldBox::rowsFor($this->density->current());
+        $col = $width - FieldBox::toggleWidth($caption, $rows) - 1;
+        if ($col < 0 && FieldBox::ROWS === $rows) {
+            $rows = 1;
+            $col = $width - FieldBox::toggleWidth($caption, $rows) - 1;
+        }
+        if ($col < 0) {
+            return [$bar->apply(AnsiText::truncate($title, $width, pad: true))];
+        }
+        $toggle = FieldBox::toggle($caption, OptionTagState::of($this->showResolved, 'resolved' === $this->hoveredButton), $rows, $this->styles);
+        $this->buttonZones->add('resolved', $col, $col + FieldBox::toggleWidth($caption, $rows));
+        $lines = [];
+        foreach ($toggle as $i => $line) {
+            $left = \intdiv($rows, num2: 2) === $i ? AnsiText::truncate($title, $col, pad: true) : AnsiText::blank($col);
+            $lines[] = $bar->apply($left.$line.' ');
+        }
+
+        return $lines;
     }
 
     /**
@@ -304,6 +432,13 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
 
             return;
         }
+        if ($kb->matches($data, 'toggle_resolved')) {
+            if (null !== $this->onToggleResolved) {
+                ($this->onToggleResolved)();
+            }
+
+            return;
+        }
         if (ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), 20)) {
             $this->invalidate();
 
@@ -334,8 +469,9 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
                 $this->list->select(\min($selected, \max(0, \count($this->rows) - 1)));
             }
         }
-        $lines = [HeaderRenderer::title('' === $this->title ? $this->translator->trans('Review') : $this->title, $width, $this->styles)];
-        $available = $height - 1;
+        $lines = $this->header(' '.('' === $this->title ? $this->translator->trans('Review') : $this->title), $width);
+        $this->headerRows = \count($lines);
+        $available = \max(1, $height - $this->headerRows);
         $scroll = $this->list->follow($available);
         for ($row = 0; $row < $available; ++$row) {
             $entry = $this->rows[$scroll + $row] ?? null;
@@ -364,6 +500,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
             'resolve' => ['x'],
             'comment' => ['c'],
             'open' => [Key::ENTER, 'o'],
+            'toggle_resolved' => ['s'],
             'focus_next_pane' => [Key::TAB],
             'exit_view' => [Key::ESCAPE],
         ];
