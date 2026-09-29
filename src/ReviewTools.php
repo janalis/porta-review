@@ -12,7 +12,6 @@ use Porta\ReviewPlugin\Model\Thread;
 use Porta\ReviewPlugin\Source\ReviewSource;
 use Porta\ReviewPlugin\Source\ReviewStore;
 use Porta\Support\FiberWait;
-use Revolt\EventLoop;
 
 /**
  * The branch's review as tools: an agent reads every conversation — a pull
@@ -166,13 +165,8 @@ final readonly class ReviewTools
     private function review(): Review
     {
         if ($this->store->loading) {
-            $timer = '';
             /** @var bool $settled */
-            $settled = FiberWait::for(function (\Closure $done) use (&$timer): void {
-                $timer = EventLoop::delay($this->loadTimeout, static fn () => $done(false));
-                $this->store->whenSettled(static fn () => $done(true));
-            });
-            EventLoop::cancel($timer);
+            $settled = FiberWait::within($this->loadTimeout, fn (\Closure $done) => $this->store->whenSettled(static fn () => $done(true)), false);
             if (true !== $settled) {
                 throw new \RuntimeException(\sprintf('The review is still loading after %gs — ask again later', $this->loadTimeout));
             }
