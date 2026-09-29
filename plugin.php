@@ -13,6 +13,7 @@ use Porta\ReviewPlugin\Editor\EditorDisplay;
 use Porta\ReviewPlugin\Editor\EditorPublisher;
 use Porta\ReviewPlugin\Local\LocalReviews;
 use Porta\ReviewPlugin\ReviewCommands;
+use Porta\ReviewPlugin\ReviewTools;
 use Porta\ReviewPlugin\Source\Refresher;
 use Porta\ReviewPlugin\Source\ReviewStore;
 use Porta\ReviewPlugin\Source\Sources;
@@ -150,6 +151,7 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
             viewSafe: ['ide_quit', 'review:open', 'review:refresh', 'review:choose', 'review:copy_link', 'ide_command_palette', 'ide_help'],
         );
         $api->registerStatusSegment($commands->statusSegment(...));
+        new ReviewTools($api, $store)->register();
     }
 
     public function deactivate(): void
