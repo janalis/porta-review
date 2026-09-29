@@ -229,4 +229,23 @@ final class LocalReviewsTest extends TestCase
         });
         $this->assertSame([null, null], $answer, 'no review on disk');
     }
+
+    /** A name that is not one directory under the reviews directory is refused at every door. */
+    public function testANameThatWouldLeaveTheReviewsDirectoryIsRefused(): void
+    {
+        $reviews = $this->reviews(['.porta/reviews/r/t/thread.json' => '{"path":"a","line":1}', '.porta/reviews/r/t/1--a.md' => 'x']);
+
+        foreach (['..', '../r', 'r/t', '', '.hidden'] as $bad) {
+            $this->assertNull($reviews->read($bad), $bad);
+            $this->assertFalse($reviews->describe($bad, 'x'), $bad);
+            $this->assertNull($reviews->open($bad, new Anchor('a', line: 1), 'a', 'b'), $bad);
+            $this->assertFalse($reviews->append($bad, 't', 'a', 'b'), $bad);
+            $this->assertFalse($reviews->append('r', $bad, 'a', 'b'), $bad);
+            $this->assertFalse($reviews->resolve('r', $bad, true), $bad);
+        }
+        $this->assertFalse($reviews->resolve('r', LocalReviews::CONVERSATION, true), 'the conversation is no thread to resolve');
+        $this->assertTrue($reviews->describe('r', 'Titled'));
+        $this->assertSame('Titled', $reviews->read('r')?->title);
+        $this->assertDirectoryDoesNotExist($this->project->path('.porta/r'));
+    }
 }

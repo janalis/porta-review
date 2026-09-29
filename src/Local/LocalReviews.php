@@ -100,6 +100,9 @@ final readonly class LocalReviews
 
     public function read(string $id): ?Review
     {
+        if (!self::isName($id)) {
+            return null;
+        }
         $dir = $this->directory().'/'.$id;
         if (!\is_dir($dir)) {
             return null;
@@ -130,9 +133,28 @@ final readonly class LocalReviews
         return new Review(SourceKind::Local, $id, '' === $title ? $id : $title, $threads, $conversation, baseSha: '' === $base ? null : $base);
     }
 
+    /**
+     * Name a review: its title in `review.json`, beside whatever else the file
+     * says (a `base`), creating the review's directory when it is new.
+     */
+    public function describe(string $id, string $title): bool
+    {
+        if (!self::isName($id)) {
+            return false;
+        }
+        $path = $this->directory().'/'.$id.'/review.json';
+        $meta = $this->json($path)->array() ?? [];
+        $meta['title'] = $title;
+
+        return $this->write($path, (string) \json_encode($meta, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)."\n");
+    }
+
     /** Add a comment to a thread (or the conversation); false when the thread does not exist. */
     public function append(string $id, string $thread, string $author, string $body): bool
     {
+        if (!self::isName($id) || !self::isName($thread)) {
+            return false;
+        }
         $dir = $this->directory().'/'.$id.'/'.$thread;
         if (self::CONVERSATION !== $thread && !\is_dir($dir)) {
             return false;
@@ -144,6 +166,9 @@ final readonly class LocalReviews
     /** Start a thread on a line; the new thread's id, or null when nothing could be written. */
     public function open(string $id, Anchor $anchor, string $author, string $body): ?string
     {
+        if (!self::isName($id)) {
+            return null;
+        }
         $thread = 't'.$this->stamp();
         $dir = $this->directory().'/'.$id.'/'.$thread;
         $meta = ['path' => $anchor->path, 'line' => $anchor->line, 'side' => $anchor->side->value];
@@ -158,6 +183,9 @@ final readonly class LocalReviews
     // @mago-expect lint:no-boolean-flag-parameter -- the bool IS the request: resolved or not.
     public function resolve(string $id, string $thread, bool $resolved): bool
     {
+        if (!self::isName($id) || !self::isName($thread) || self::CONVERSATION === $thread) {
+            return false;
+        }
         $dir = $this->directory().'/'.$id.'/'.$thread;
         if (!\is_dir($dir)) {
             return false;
@@ -265,8 +293,18 @@ final readonly class LocalReviews
         return \gmdate('Ymd\THis', (int) $seconds).\substr($micro, offset: 1, length: 7).'Z';
     }
 
-    /** An author as a file-name part: no separator, no dot-file, never empty. */
-    private static function fileSafe(string $author): string
+    /**
+     * A review's or a thread's name is one directory under the reviews
+     * directory: no separator, no `.` or `..`, nothing empty — a name typed on
+     * a command line must not write anywhere else.
+     */
+    private static function isName(string $name): bool
+    {
+        return 1 === \preg_match('/^[A-Za-z0-9_][A-Za-z0-9._-]*$/', $name);
+    }
+
+    /** An author, or a review's name, as a file-name part: no separator, no dot-file, never empty. */
+    public static function fileSafe(string $author): string
     {
         $safe = \trim(\str_replace(['/', '\\', "\0", "\n"], replace: '-', subject: $author), characters: ' .-');
 
