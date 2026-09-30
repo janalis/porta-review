@@ -116,7 +116,7 @@ final class ReviewViewController implements ContributedView
             return;
         }
         $this->open = true;
-        $this->services->host->show($this->services->region);
+        $this->services->host->show($this->services->region, self::ID);
         $this->services->host->focus($this->list);
         $this->sync();
         if (!$this->store->loading) {
