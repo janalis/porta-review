@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Porta\ReviewPlugin;
 
 use Porta\Plugin\Api\PluginApi;
+use Porta\Plugin\Api\ToolEffect;
 use Porta\ReviewPlugin\Model\Anchor;
 use Porta\ReviewPlugin\Model\Comment;
 use Porta\ReviewPlugin\Model\Review;
@@ -37,6 +38,7 @@ final readonly class ReviewTools
             'The current branch\'s review — a GitHub pull request, a GitLab merge request, or a local review — with every line conversation (path, 1-based line, resolved, comments) and the review-level ones.',
             ['type' => 'object', 'properties' => ['includeResolved' => ['type' => 'boolean', 'description' => 'Also the resolved threads; default false']]],
             $this->threads(...),
+            effect: ToolEffect::Reads,
         );
         $this->api->registerTool(
             'reply',
@@ -47,6 +49,7 @@ final readonly class ReviewTools
                 'required' => ['thread', 'body'],
             ],
             $this->reply(...),
+            effect: ToolEffect::Publishes,
         );
         $this->api->registerTool(
             'resolve',
@@ -57,6 +60,7 @@ final readonly class ReviewTools
                 'required' => ['thread'],
             ],
             $this->resolve(...),
+            effect: ToolEffect::Publishes,
         );
         $this->api->registerTool(
             'comment',
@@ -67,6 +71,7 @@ final readonly class ReviewTools
                 'required' => ['path', 'line', 'body'],
             ],
             $this->comment(...),
+            effect: ToolEffect::Publishes,
         );
     }
 
