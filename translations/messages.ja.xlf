@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" target-language="ja" datatype="plaintext" original="messages">
+    <body>
+      <trans-unit id="1">
+        <source>Comment on %review%</source>
+        <target>%review% にコメント</target>
+      </trans-unit>
+      <trans-unit id="2">
+        <source>Conversation (%count%)</source>
+        <target>会話 (%count%)</target>
+      </trans-unit>
+      <trans-unit id="3">
+        <source>Copied %url%</source>
+        <target>%url% をコピーしました</target>
+      </trans-unit>
+      <trans-unit id="4">
+        <source>Local review: %id%</source>
+        <target>ローカルレビュー: %id%</target>
+      </trans-unit>
+      <trans-unit id="5">
+        <source>Looking for a review…</source>
+        <target>レビューを探しています…</target>
+      </trans-unit>
+      <trans-unit id="6">
+        <source>New comment on %path%:%line%</source>
+        <target>%path%:%line% への新しいコメント</target>
+      </trans-unit>
+      <trans-unit id="7">
+        <source>No comments yet — press c to write one</source>
+        <target>コメントはまだありません — c で書き込みます</target>
+      </trans-unit>
+      <trans-unit id="8">
+        <source>No conversation on this line</source>
+        <target>この行に会話はありません</target>
+      </trans-unit>
+      <trans-unit id="9">
+        <source>No review for this branch</source>
+        <target>このブランチのレビューはありません</target>
+      </trans-unit>
+      <trans-unit id="10">
+        <source>Open a project file to comment on</source>
+        <target>コメントするプロジェクトのファイルを開いてください</target>
+      </trans-unit>
+      <trans-unit id="11">
+        <source>Pick a thread, or press c on a line</source>
+        <target>スレッドを選ぶか、行で c を押します</target>
+      </trans-unit>
+      <trans-unit id="12">
+        <source>Reply</source>
+        <target>返信</target>
+      </trans-unit>
+      <trans-unit id="13">
+        <source>Reply to %author% on %path%:%line%</source>
+        <target>%path%:%line% の %author% に返信</target>
+      </trans-unit>
+      <trans-unit id="14">
+        <source>Review (%count% open)</source>
+        <target>レビュー (未解決 %count%)</target>
+      </trans-unit>
+      <trans-unit id="15">
+        <source>Show which review?</source>
+        <target>どのレビューを表示しますか？</target>
+      </trans-unit>
+      <trans-unit id="16">
+        <source>The branch's pull or merge request</source>
+        <target>ブランチのプルリクエストまたはマージリクエスト</target>
+      </trans-unit>
+      <trans-unit id="17">
+        <source>This review has no link</source>
+        <target>このレビューにはリンクがありません</target>
+      </trans-unit>
+      <trans-unit id="18">
+        <source>Thread reopened</source>
+        <target>スレッドを再開しました</target>
+      </trans-unit>
+      <trans-unit id="19">
+        <source>Thread resolved</source>
+        <target>スレッドを解決しました</target>
+      </trans-unit>
+      <trans-unit id="20">
+        <source>outdated</source>
+        <target>古い</target>
+      </trans-unit>
+      <trans-unit id="21">
+        <source>Show Review</source>
+        <target>レビューを表示</target>
+      </trans-unit>
+      <trans-unit id="22">
+        <source>Refresh Review</source>
+        <target>レビューを更新</target>
+      </trans-unit>
+      <trans-unit id="23">
+        <source>Choose Review…</source>
+        <target>レビューを選択…</target>
+      </trans-unit>
+      <trans-unit id="24">
+        <source>Copy Review Link</source>
+        <target>レビューのリンクをコピー</target>
+      </trans-unit>
+      <trans-unit id="25">
+        <source>Show Conversation on This Line</source>
+        <target>この行の会話を表示</target>
+      </trans-unit>
+      <trans-unit id="26">
+        <source>Comment on This Line</source>
+        <target>この行にコメント</target>
+      </trans-unit>
+      <trans-unit id="27">
+        <source>Show resolved conversations</source>
+        <target>解決済みの会話を表示</target>
+      </trans-unit>
+      <trans-unit id="28">
+        <source> S show-resolved </source>
+        <target> S show-resolved </target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

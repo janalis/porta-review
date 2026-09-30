@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" target-language="fr" datatype="plaintext" original="messages">
+    <body>
+      <trans-unit id="1">
+        <source>Comment on %review%</source>
+        <target>Commenter %review%</target>
+      </trans-unit>
+      <trans-unit id="2">
+        <source>Conversation (%count%)</source>
+        <target>Conversation (%count%)</target>
+      </trans-unit>
+      <trans-unit id="3">
+        <source>Copied %url%</source>
+        <target>%url% copié</target>
+      </trans-unit>
+      <trans-unit id="4">
+        <source>Local review: %id%</source>
+        <target>Revue locale : %id%</target>
+      </trans-unit>
+      <trans-unit id="5">
+        <source>Looking for a review…</source>
+        <target>Recherche d’une revue…</target>
+      </trans-unit>
+      <trans-unit id="6">
+        <source>New comment on %path%:%line%</source>
+        <target>Nouveau commentaire sur %path%:%line%</target>
+      </trans-unit>
+      <trans-unit id="7">
+        <source>No comments yet — press c to write one</source>
+        <target>Aucun commentaire — appuyez sur c pour en écrire un</target>
+      </trans-unit>
+      <trans-unit id="8">
+        <source>No conversation on this line</source>
+        <target>Aucune conversation sur cette ligne</target>
+      </trans-unit>
+      <trans-unit id="9">
+        <source>No review for this branch</source>
+        <target>Aucune revue pour cette branche</target>
+      </trans-unit>
+      <trans-unit id="10">
+        <source>Open a project file to comment on</source>
+        <target>Ouvrez un fichier du projet à commenter</target>
+      </trans-unit>
+      <trans-unit id="11">
+        <source>Pick a thread, or press c on a line</source>
+        <target>Choisissez un fil, ou appuyez sur c sur une ligne</target>
+      </trans-unit>
+      <trans-unit id="12">
+        <source>Reply</source>
+        <target>Répondre</target>
+      </trans-unit>
+      <trans-unit id="13">
+        <source>Reply to %author% on %path%:%line%</source>
+        <target>Répondre à %author% sur %path%:%line%</target>
+      </trans-unit>
+      <trans-unit id="14">
+        <source>Review (%count% open)</source>
+        <target>Revue (%count% ouverts)</target>
+      </trans-unit>
+      <trans-unit id="15">
+        <source>Show which review?</source>
+        <target>Afficher quelle revue ?</target>
+      </trans-unit>
+      <trans-unit id="16">
+        <source>The branch's pull or merge request</source>
+        <target>La pull ou merge request de la branche</target>
+      </trans-unit>
+      <trans-unit id="17">
+        <source>This review has no link</source>
+        <target>Cette revue n’a pas de lien</target>
+      </trans-unit>
+      <trans-unit id="18">
+        <source>Thread reopened</source>
+        <target>Fil rouvert</target>
+      </trans-unit>
+      <trans-unit id="19">
+        <source>Thread resolved</source>
+        <target>Fil résolu</target>
+      </trans-unit>
+      <trans-unit id="20">
+        <source>outdated</source>
+        <target>obsolète</target>
+      </trans-unit>
+      <trans-unit id="21">
+        <source>Show Review</source>
+        <target>Afficher la revue</target>
+      </trans-unit>
+      <trans-unit id="22">
+        <source>Refresh Review</source>
+        <target>Actualiser la revue</target>
+      </trans-unit>
+      <trans-unit id="23">
+        <source>Choose Review…</source>
+        <target>Choisir la revue…</target>
+      </trans-unit>
+      <trans-unit id="24">
+        <source>Copy Review Link</source>
+        <target>Copier le lien de la revue</target>
+      </trans-unit>
+      <trans-unit id="25">
+        <source>Show Conversation on This Line</source>
+        <target>Afficher la conversation de cette ligne</target>
+      </trans-unit>
+      <trans-unit id="26">
+        <source>Comment on This Line</source>
+        <target>Commenter cette ligne</target>
+      </trans-unit>
+      <trans-unit id="27">
+        <source>Show resolved conversations</source>
+        <target>Afficher les conversations résolues</target>
+      </trans-unit>
+      <trans-unit id="28">
+        <source> S show-resolved </source>
+        <target> S show-resolved </target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
