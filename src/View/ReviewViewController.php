@@ -98,9 +98,15 @@ final class ReviewViewController implements ContributedView
     }
 
     #[\Override]
-    public function ownsMainArea(): bool
+    public function hostsWindow(): bool
     {
         return true;
+    }
+
+    #[\Override]
+    public function title(): string
+    {
+        return $this->api->trans('Review');
     }
 
     #[\Override]

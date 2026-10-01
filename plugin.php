@@ -148,7 +148,7 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
             'Run',
             ['i:review:open', MenuModel::SEP, 'i:review:refresh', 'i:review:choose', 'i:review:copy_link'],
             viewId: ReviewViewController::ID,
-            viewSafe: ['ide_quit', 'review:open', 'review:refresh', 'review:choose', 'review:copy_link', 'ide_command_palette', 'ide_help'],
+            viewSafe: ['ide_quit', 'review:open', 'review:refresh', 'review:choose', 'review:copy_link', 'ide_command_palette', 'ide_help', 'ide_welcome'],
         );
         $api->registerStatusSegment($commands->statusSegment(...));
         new ReviewTools($api, $store)->register();

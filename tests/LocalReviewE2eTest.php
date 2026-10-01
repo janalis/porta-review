@@ -10,6 +10,8 @@ use Porta\Editor\BufferService;
 use Porta\Editor\OpenFocus;
 use Porta\Ide;
 use Porta\Layout\ViewRegions;
+use Porta\Overlay\Presenter\ViewWindowPresenter;
+use Porta\Overlay\Region\ModalBox;
 use Porta\Plugin\Lifecycle\PluginLifecycle;
 use Porta\ReviewPlugin\View\ReviewMouseRouter;
 use Porta\Tests\Support\ClearsPortaLsp;
@@ -17,6 +19,7 @@ use Porta\Tests\Support\Paint;
 use Porta\Tests\Support\PreservesPath;
 use Porta\Tests\Support\Probe;
 use Porta\Tests\Support\RunsIde;
+use Porta\Tests\Support\ScreenReads;
 use Porta\Tests\Support\Services;
 use Porta\Tests\Support\TempProject;
 use Porta\Tests\Support\Toasts;
@@ -40,6 +43,7 @@ final class LocalReviewE2eTest extends TestCase
     use ClearsPortaLsp;
     use PreservesPath;
     use RunsIde;
+    use ScreenReads;
     use UsesBundledPlugins;
 
     private const string CONFIG = '{"enabledPlugins":["git","review"],"plugins":{"review":{"provider":"local"}}}';
@@ -334,7 +338,8 @@ final class LocalReviewE2eTest extends TestCase
      * the view is painted INTO them. Without it the app menu's dropdown showed
      * only its top edge — the panes painted over the rest.
      */
-    public function testAMenuDropdownPaintsOverTheViewsPanes(): void
+    /** The app menu floats over the Review window: its dropdown paints above the window's panes. */
+    public function testAMenuDropdownPaintsOverTheViewsWindow(): void
     {
         \putenv('PATH=/nonexistent');
         $project = self::project();
@@ -350,9 +355,13 @@ final class LocalReviewE2eTest extends TestCase
                     $tui->handleInput("\x1b[B");
                     $this->frame($tui);
 
-                    $list = $tui->getById('review-threads');
-                    $painted = AnsiUtils::stripAnsiCodes(\implode("\n", Paint::lines($list, new RenderContext($list->width(), 12))));
-                    $this->assertStringContainsString('Save File', $painted, 'the dropdown is composited into the thread list');
+                    $screen = $this->screenGrid($tui, $terminal);
+                    $quitRow = $this->rowOf($screen, 'Quit');
+                    $this->assertNotNull($quitRow, 'the dropdown is on screen');
+                    $window = Services::resolve($ide, ViewWindowPresenter::class)->box();
+                    $this->assertInstanceOf(ModalBox::class, $window);
+                    $this->assertTrue($window->contains($quitRow, $window->col + 1), 'it hangs down over the window, painted above it');
+                    $this->assertTrue(Services::resolve($ide, ViewRegistry::class)->isOpen('review'), 'opening the menu leaves the window');
                     $tui->handleInput("\x1b");
                 },
             ],
