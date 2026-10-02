@@ -96,6 +96,9 @@ final class SourcesTest extends TestCase
 
         $this->settings['provider'] = 'gitlab';
         $this->assertInstanceOf(GitLabSource::class, $this->resolve($this->sources('git@github.com:g/app.git')));
+        $this->assertNull($this->resolve($this->sources('git@evil.tld:g/app.git')), 'a pin picks the forge, not the host: no token to one nobody named');
+        $this->settings['provider'] = 'github';
+        $this->assertNull($this->resolve($this->sources('git@evil.tld:g/app.git')), 'GH_ENTERPRISE_TOKEN neither');
         $this->settings['provider'] = 'local';
         $this->assertInstanceOf(LocalSource::class, $this->resolve($this->sources('git@github.com:g/app.git')), 'even with nothing on disk yet');
     }

@@ -59,7 +59,11 @@ final class Sources
         }
         RepoFacts::read($this->git, function (?RepoFacts $facts) use ($provider, $onDone): void {
             $remote = $facts?->remote;
-            $kind = null === $remote ? null : $provider ?? $this->forgeOf($remote->host);
+            // A pinned provider picks the forge, never the host: the token
+            // still goes only to github.com, gitlab.com or a host named in
+            // `hosts` — a global pin must not follow any repository's remote.
+            $forge = null === $remote ? null : $this->forgeOf($remote->host);
+            $kind = null === $forge ? null : $provider ?? $forge;
             $onDone(match (true) {
                 null === $facts || null === $remote => null,
                 SourceKind::GitHub === $kind => new GitHubSource($facts, $this->github($remote)),

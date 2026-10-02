@@ -25,7 +25,8 @@ The plugin looks for the review of the **current branch**:
 name the host in the `hosts` setting — the forge's token goes to that host, so
 Porta never guesses one from its name:
 `ghe.corp.com=github, git.corp.com=gitlab`. The `provider` setting pins one
-source instead of choosing.
+source instead of choosing — the forge, not the host: a token still goes only
+to one of those.
 
 **Review → Choose Review…** switches between the local reviews on disk and the
 branch's pull or merge request.
