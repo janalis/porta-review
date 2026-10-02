@@ -21,8 +21,9 @@ The plugin looks for the review of the **current branch**:
    branch's upstream, or `origin` when the branch has none. The pull or merge
    request is the open one whose source branch is the upstream's name.
 
-`github.com` and any host with `gitlab` in its name are recognised on their
-own. For anything else, name the host in the `hosts` setting:
+`github.com` and `gitlab.com` are recognised on their own. For anything else,
+name the host in the `hosts` setting — the forge's token goes to that host, so
+Porta never guesses one from its name:
 `ghe.corp.com=github, git.corp.com=gitlab`. The `provider` setting pins one
 source instead of choosing.
 

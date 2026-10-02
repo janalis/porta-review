@@ -21,7 +21,7 @@ use Porta\ReviewPlugin\Model\SourceKind;
  * `provider` pins one; `auto` prefers a local review when one is on disk — an
  * agent writing one is the thing happening right now — and otherwise asks the
  * forge the branch's remote lives on. The host decides the forge: github.com
- * and GitLab's own hosts are known, anything else is named in `hosts`
+ * and gitlab.com are known, anything else is named in `hosts`
  * (`git.corp.com=gitlab, ghe.corp.com=github`).
  */
 final class Sources
@@ -81,7 +81,9 @@ final class Sources
 
         return match (true) {
             'github.com' === $host => SourceKind::GitHub,
-            \str_contains($host, 'gitlab') => SourceKind::GitLab,
+            // Never a substring match: the remote is the repository's to name,
+            // and `gitlab.attacker.tld` would be handed the user's GITLAB_TOKEN.
+            'gitlab.com' === $host => SourceKind::GitLab,
             default => null,
         };
     }

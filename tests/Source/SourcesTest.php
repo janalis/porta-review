@@ -82,7 +82,8 @@ final class SourcesTest extends TestCase
         $this->assertInstanceOf(GitHubSource::class, $this->resolve($sources), 'the user picked the forge over it');
 
         $this->assertInstanceOf(GitHubSource::class, $this->resolve($this->sources('https://github.com/acme/app.git')));
-        $this->assertInstanceOf(GitLabSource::class, $this->resolve($this->sources('git@gitlab.example.org:g/app.git')), 'a host that says gitlab');
+        $this->assertInstanceOf(GitLabSource::class, $this->resolve($this->sources('git@gitlab.com:g/app.git')));
+        $this->assertNull($this->resolve($this->sources('git@gitlab.example.org:g/app.git')), 'a host that merely says gitlab gets no token');
         $this->assertNull($this->resolve($this->sources('git@git.corp.com:g/app.git')), 'a host nobody named');
         $this->assertNull($this->resolve($this->sources()), 'no remote at all');
     }
