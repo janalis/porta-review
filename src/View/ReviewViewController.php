@@ -49,6 +49,15 @@ final class ReviewViewController implements ContributedView
 
     private int $generation = 0;
 
+    /**
+     * The thread a file still loading was opened on — what the pane will
+     * focus, which the pane cannot say until the load lands. Null when none
+     * is loading, and when the one loading was asked for no thread.
+     *
+     * @var array{focus: ?string}|null
+     */
+    private ?array $loading = null;
+
     private readonly ReviewMouseRouter $pointer;
 
     /** @param \Closure(): bool $showResolved */
@@ -224,7 +233,9 @@ final class ReviewViewController implements ContributedView
 
             return;
         }
-        $this->loadFile($review, $this->shownPath, $this->content->currentThread()?->id);
+        // A file still loading is not on the pane yet: what it was opened on is
+        // the focus, not what the pane shows from before.
+        $this->loadFile($review, $this->shownPath, null === $this->loading ? $this->content->currentThread()?->id : $this->loading['focus']);
     }
 
     /**
@@ -244,6 +255,7 @@ final class ReviewViewController implements ContributedView
         \assert(null !== $review, description: 'the list has entries only while a review is loaded');
         if (ReviewListWidget::CONVERSATION === $id) {
             $this->shownPath = null;
+            $this->loading = null;
             ++$this->generation;
             $this->content->showConversation($review->label().' · '.$review->title, $review->conversation);
 
@@ -258,6 +270,7 @@ final class ReviewViewController implements ContributedView
     private function loadFile(Review $review, string $path, ?string $focus): void
     {
         $this->shownPath = $path;
+        $this->loading = ['focus' => $focus];
         $generation = ++$this->generation;
         $absolute = \rtrim($this->api->projectRoot(), characters: '/').'/'.$path;
         $range =
@@ -268,6 +281,7 @@ final class ReviewViewController implements ContributedView
             if ($generation !== $this->generation) {
                 return; // another file was asked for, or the review went away, since
             }
+            $this->loading = null;
             // Read now, not captured: a reload that landed meanwhile has the newer threads.
             $review = $this->store->review;
             \assert(null !== $review, description: 'losing the review bumps the generation');

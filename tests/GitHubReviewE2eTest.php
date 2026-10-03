@@ -163,6 +163,14 @@ final class GitHubReviewE2eTest extends TestCase
         $this->await(static fn (): bool => 0 === $lane->inFlight(), what: 'the plugin\'s git');
     }
 
+    /** The review's reload has answered, and the pane it re-reads with it. */
+    private function awaitReloaded(Ide $ide): void
+    {
+        $store = Probe::get(Services::resolve($ide, ViewRegistry::class)->find('review'), 'store');
+        $this->await(static fn (): bool => !$store->loading, what: 'the review to reload');
+        $this->awaitGitIdle($ide);
+    }
+
     private function awaitToast(Ide $ide, string $message): void
     {
         $this->await(static fn (): bool => \in_array($message, Toasts::all($ide), strict: true), what: $message);
@@ -242,6 +250,10 @@ final class GitHubReviewE2eTest extends TestCase
                     $tui->setFocus($tui->getById('review-threads'));
                     $tui->handleInput('x');
                     $this->awaitToast($ide, 'Thread resolved');
+                    // The toast is the write's answer; the reload it starts re-reads the
+                    // diff and puts the cursor back on the thread — after the keys below,
+                    // under load, which took the `c` off its line.
+                    $this->awaitReloaded($ide);
                     // Tab round the three panes, then `c` on a diff line starts a thread there.
                     $tui->handleInput("\t");
                     $this->assertSame($tui->getById('review-reply'), $tui->getFocus());
@@ -280,6 +292,38 @@ final class GitHubReviewE2eTest extends TestCase
         );
 
         $this->addToAssertionCount(1);
+    }
+
+    /**
+     * A reload that lands while a thread's file is still loading keeps that
+     * thread. The pane still showed what was there before, so asking IT what
+     * to focus answered nothing, and the newer load put the caret on the hunk
+     * header instead — the review E2e's `c` then commented on no line.
+     */
+    public function testAReloadDuringAThreadsLoadKeepsTheThread(): void
+    {
+        $project = $this->project();
+        // The review's own diff (base...head) answers late; nothing else does.
+        $slow = new TempProject(['git' => \sprintf("#!/bin/sh\nfor a in \"\$@\"; do case \"\$a\" in *...*) sleep 1.5 ;; esac; done\nexec %s \"\$@\"\n", \escapeshellarg((string) $this->whichGit()))]);
+        \chmod($slow->path('git'), permissions: 0o755);
+        \putenv('PATH='.$slow->dir.':'.\PORTA_TEST_PRISTINE_PATH);
+
+        $this->runIde(
+            $project,
+            $project->path('src/A.php'),
+            [
+                200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
+                    Services::resolve($ide, CommandRegistry::class)->run('review:open');
+                    $this->awaitPainted($tui, $terminal, 'Why bee?');
+                    $tui->setFocus($tui->getById('review-threads'));
+                    $tui->handleInput("\x1b[B"); // the thread: its file starts loading
+                    $tui->handleInput('R'); // and a reload overtakes it
+                    $this->awaitReloaded($ide);
+
+                    $this->assertSame('PRRT_1', $tui->getById('review-diff')->currentThread()?->id, 'the caret is on the thread that was asked for');
+                },
+            ],
+        );
     }
 
     public function testTheSummaryModeWritesTheThreadAfterItsLine(): void
