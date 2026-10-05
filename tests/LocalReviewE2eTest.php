@@ -16,6 +16,7 @@ use Porta\Plugin\Lifecycle\PluginLifecycle;
 use Porta\ReviewPlugin\View\ReviewMouseRouter;
 use Porta\ReviewPlugin\Widget\ReplyBoxWidget;
 use Porta\ReviewPlugin\Widget\ReviewContentWidget;
+use Porta\ReviewPlugin\Widget\ReviewListWidget;
 use Porta\Tests\Support\ClearsPortaLsp;
 use Porta\Tests\Support\Paint;
 use Porta\Tests\Support\PreservesPath;
@@ -391,7 +392,7 @@ final class LocalReviewE2eTest extends TestCase
                     \assert(null !== $separator, description: 'the view minted its region');
                     $rect = Services::resolve($ide, Renderer::class)->getWidgetRect($separator);
                     \assert(null !== $rect, description: 'the separator was painted');
-                    $list = $tui->getById('review-threads');
+                    $list = Widgets::byId($tui, 'review-threads', ReviewListWidget::class);
                     $before = $list->width();
 
                     $row = $rect->row + 3;
@@ -438,7 +439,7 @@ final class LocalReviewE2eTest extends TestCase
                         $tui->handleInput(\sprintf("\x1b[<0;%d;%dM", $col, $row));
                         $tui->handleInput(\sprintf("\x1b[<0;%d;%dm", $col, $row));
                     };
-                    $list = $tui->getById('review-threads');
+                    $list = Widgets::byId($tui, 'review-threads', ReviewListWidget::class);
                     $this->assertFalse($list->selectId('t0'), 'resolved: hidden to begin with');
 
                     // The list's fourth row is the thread (title, status, conversation, the file heading).
