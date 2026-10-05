@@ -14,6 +14,8 @@ use Porta\Overlay\Presenter\ViewWindowPresenter;
 use Porta\Overlay\Region\ModalBox;
 use Porta\Plugin\Lifecycle\PluginLifecycle;
 use Porta\ReviewPlugin\View\ReviewMouseRouter;
+use Porta\ReviewPlugin\Widget\ReplyBoxWidget;
+use Porta\ReviewPlugin\Widget\ReviewContentWidget;
 use Porta\Tests\Support\ClearsPortaLsp;
 use Porta\Tests\Support\Paint;
 use Porta\Tests\Support\PreservesPath;
@@ -24,6 +26,7 @@ use Porta\Tests\Support\Services;
 use Porta\Tests\Support\TempProject;
 use Porta\Tests\Support\Toasts;
 use Porta\Tests\Support\UsesBundledPlugins;
+use Porta\Tests\Support\Widgets;
 use Porta\Ui\Glyphs;
 use Porta\Workbench\View\ViewRegistry;
 use Symfony\Component\Filesystem\Filesystem;
@@ -76,8 +79,8 @@ final class LocalReviewE2eTest extends TestCase
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
                     // The editor marks the thread's line — the 4th — in the gutter.
-                    $this->await(static fn (): bool => [] !== $tui->getById('editor')->decorations->commentMarks, what: 'the gutter mark');
-                    $this->assertSame([3 => 'claude: Use array_sum here.'], $tui->getById('editor')->decorations->commentMarks);
+                    $this->await(static fn (): bool => [] !== Widgets::editor($tui)->decorations->commentMarks, what: 'the gutter mark');
+                    $this->assertSame([3 => 'claude: Use array_sum here.'], Widgets::editor($tui)->decorations->commentMarks);
 
                     Services::resolve($ide, CommandRegistry::class)->run('review:open');
                     $this->awaitPainted($tui, $terminal, 'Tidy the loop');
@@ -124,8 +127,8 @@ final class LocalReviewE2eTest extends TestCase
             $project->path('src/A.php'),
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
-                    $this->await(static fn (): bool => [] !== $tui->getById('editor')->decorations->commentMarks, what: 'the review loaded');
-                    $tui->getById('editor')->jumpTo(1, 0);
+                    $this->await(static fn (): bool => [] !== Widgets::editor($tui)->decorations->commentMarks, what: 'the review loaded');
+                    Widgets::editor($tui)->jumpTo(1, 0);
                     Services::resolve($ide, CommandRegistry::class)->run('review:comment_line');
                     $this->awaitPainted($tui, $terminal, 'New comment on src/A.php:2');
                     $this->assertTrue(Services::resolve($ide, ViewRegistry::class)->find('review')?->isOpen());
@@ -204,7 +207,7 @@ final class LocalReviewE2eTest extends TestCase
                     $this->awaitPainted($tui, $terminal, 'No review for this branch');
                     $tui->setFocus($tui->getById('review-threads'));
                     $tui->handleInput('c');
-                    $this->assertSame('', $tui->getById('review-reply')->targetLabel(), 'no review to write to');
+                    $this->assertSame('', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->targetLabel(), 'no review to write to');
 
                     $view = Services::resolve($ide, ViewRegistry::class)->find('review');
                     $view?->close();
@@ -235,7 +238,7 @@ final class LocalReviewE2eTest extends TestCase
             $project->path('src/A.php'),
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
-                    $marks = static fn (): array => $tui->getById('editor')->decorations->commentMarks;
+                    $marks = static fn (): array => Widgets::editor($tui)->decorations->commentMarks;
                     $this->await(static fn (): bool => [3 => 'claude: Use array_sum here.'] === $marks(), what: 'the newest review');
                     Services::resolve($ide, CommandRegistry::class)->run('review:choose');
                     $this->awaitPainted($tui, $terminal, 'Local review: other');
@@ -247,11 +250,11 @@ final class LocalReviewE2eTest extends TestCase
                 300 => function (Tui $tui, $terminal, Ide $ide) use ($outside, $project): void {
                     // A file outside the project: no review is about it, and there is no line to comment on.
                     Services::resolve($ide, BufferService::class)->openFile($outside->path('elsewhere.php'), OpenFocus::Editor);
-                    $this->await(static fn (): bool => [] === $tui->getById('editor')->decorations->commentMarks, what: 'the other file, unmarked');
+                    $this->await(static fn (): bool => [] === Widgets::editor($tui)->decorations->commentMarks, what: 'the other file, unmarked');
                     Services::resolve($ide, CommandRegistry::class)->run('review:comment_line');
                     $this->awaitToast($ide, 'Open a project file to comment on');
                     Services::resolve($ide, BufferService::class)->openFile($project->path('src/A.php'), OpenFocus::Editor);
-                    $this->await(static fn (): bool => [] !== $tui->getById('editor')->decorations->commentMarks, what: 'back, marked again');
+                    $this->await(static fn (): bool => [] !== Widgets::editor($tui)->decorations->commentMarks, what: 'back, marked again');
                 },
             ],
         );
@@ -270,7 +273,7 @@ final class LocalReviewE2eTest extends TestCase
             $project->path('src/A.php'),
             [
                 200 => function (Tui $tui, $terminal, Ide $ide) use ($project): void {
-                    $decorations = $tui->getById('editor')->decorations;
+                    $decorations = Widgets::editor($tui)->decorations;
                     $this->await(static fn (): bool => [] !== $decorations->commentMarks, what: 'the review loaded');
                     $lifecycle = Services::resolve($ide, PluginLifecycle::class);
 
@@ -401,7 +404,7 @@ final class LocalReviewE2eTest extends TestCase
                     // Like every other divider, it thickens under the pointer before the drag.
                     $this->assertStringContainsString(Glyphs::PANE_DIVIDER_ACTIVE, Paint::lines($separator, new RenderContext(1, 5))[0], 'heavy under the pointer, as the others are');
                     $this->assertSame($before + 10, $list->width(), 'the list follows the drag');
-                    $this->assertSame($list->width(), $tui->getById('review-reply')->width(), 'and the reply box with it');
+                    $this->assertSame($list->width(), Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->width(), 'and the reply box with it');
                 },
             ],
         );
@@ -448,7 +451,7 @@ final class LocalReviewE2eTest extends TestCase
                     $this->awaitPainted($tui, $terminal, '$total += $item;');
                     $this->assertSame('t1', $list->selectedId());
 
-                    $reply = $tui->getById('review-reply');
+                    $reply = Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class);
                     $tui->handleInput('r');
                     $tui->handleInput('Clicked');
                     $this->frame($tui);
@@ -461,7 +464,7 @@ final class LocalReviewE2eTest extends TestCase
                     $this->await(static fn (): bool => 2 === \count((array) \glob($project->path('.porta/reviews/agent/t1/*.md'))), what: 'the click to send');
 
                     // The toolbar toggle on the pane's header.
-                    $content = $tui->getById('review-diff');
+                    $content = Widgets::byId($tui, 'review-diff', ReviewContentWidget::class);
                     $pane = $renderer->getWidgetRect($content);
                     \assert(null !== $pane, description: 'the pane was painted');
                     // The toggle's row: the only one on a short screen, the middle one boxed.

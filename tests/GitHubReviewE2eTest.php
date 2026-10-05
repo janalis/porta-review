@@ -11,6 +11,8 @@ use Porta\Editor\OpenFocus;
 use Porta\Ide;
 use Porta\ReviewPlugin\Tests\Support\FakeForge;
 use Porta\ReviewPlugin\Tests\Support\UsesFakeForge;
+use Porta\ReviewPlugin\Widget\ReplyBoxWidget;
+use Porta\ReviewPlugin\Widget\ReviewContentWidget;
 use Porta\Tests\Support\ClearsPortaLsp;
 use Porta\Tests\Support\GitBinary;
 use Porta\Tests\Support\PreservesPath;
@@ -21,6 +23,7 @@ use Porta\Tests\Support\Services;
 use Porta\Tests\Support\TempProject;
 use Porta\Tests\Support\Toasts;
 use Porta\Tests\Support\UsesBundledPlugins;
+use Porta\Tests\Support\Widgets;
 use Porta\Workbench\View\ViewRegistry;
 use Symfony\Component\Tui\Ansi\AnsiUtils;
 use Symfony\Component\Tui\Render\RenderContext;
@@ -185,13 +188,13 @@ final class GitHubReviewE2eTest extends TestCase
             $project->path('src/A.php'),
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
-                    $marks = static fn (): array => $tui->getById('editor')->decorations->commentMarks;
+                    $marks = static fn (): array => Widgets::editor($tui)->decorations->commentMarks;
                     $this->await(static fn (): bool => [] !== $marks(), what: 'the gutter mark');
                     $this->assertSame([3 => 'bob: Why bee?'], $marks(), 'head line 3 is the working copy\'s 4th; the resolved thread is hidden');
                     $this->awaitPainted($tui, $terminal, '✎ PR #12 · 1');
 
                     // The caret on the marked line: "show conversation" opens the view on it.
-                    $tui->getById('editor')->jumpTo(3, 0);
+                    Widgets::editor($tui)->jumpTo(3, 0);
                     Services::resolve($ide, CommandRegistry::class)->run('review:show_conversation');
                     $this->awaitPainted($tui, $terminal, '+$bee = 2;');
                     $this->assertTrue(Services::resolve($ide, ViewRegistry::class)->find('review')?->isOpen());
@@ -202,9 +205,9 @@ final class GitHubReviewE2eTest extends TestCase
                     $tui->setFocus($tui->getById('review-diff'));
                     $tui->handleInput("\r");
                     $this->await(static fn (): bool => true !== Services::resolve($ide, ViewRegistry::class)->find('review')?->isOpen(), what: 'the view to close');
-                    $this->assertSame(2, $tui->getById('editor')->getDocument()->cursorLine, 'the head\'s line 3, as the thread names it');
+                    $this->assertSame(2, Widgets::editor($tui)->getDocument()->cursorLine, 'the head\'s line 3, as the thread names it');
 
-                    $tui->getById('editor')->jumpTo(0, 0);
+                    Widgets::editor($tui)->jumpTo(0, 0);
                     Services::resolve($ide, CommandRegistry::class)->run('review:show_conversation');
                     $this->awaitToast($ide, 'No conversation on this line');
 
@@ -269,7 +272,7 @@ final class GitHubReviewE2eTest extends TestCase
                     // The barrier is a read logged AFTER the comment's own call: the reload
                     // a successful write starts, right after the box is cleared.
                     $this->await(fn (): bool => $this->readAfter('pulls/12/comments'), what: 'the reload after the comment');
-                    $this->assertSame('Nitx', $tui->getById('review-reply')->text(), 'not what was sent, so kept');
+                    $this->assertSame('Nitx', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->text(), 'not what was sent, so kept');
                 },
                 500 => function (Tui $tui, $terminal, Ide $ide): void {
                     $this->assertSame(['addComment', 'addPullRequestReviewThreadReply', 'resolveReviewThread', 'repos/acme/app/pulls/12/comments'], $this->writes());
@@ -286,7 +289,7 @@ final class GitHubReviewE2eTest extends TestCase
                     $tui->handleInput('Again');
                     $tui->handleInput("\x1b[13;5u");
                     $this->awaitToast($ide, 'Thread is locked');
-                    $this->assertSame('Again', $tui->getById('review-reply')->text());
+                    $this->assertSame('Again', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->text());
                 },
             ],
         );
@@ -320,7 +323,7 @@ final class GitHubReviewE2eTest extends TestCase
                     $tui->handleInput('R'); // and a reload overtakes it
                     $this->awaitReloaded($ide);
 
-                    $this->assertSame('PRRT_1', $tui->getById('review-diff')->currentThread()?->id, 'the caret is on the thread that was asked for');
+                    $this->assertSame('PRRT_1', Widgets::byId($tui, 'review-diff', ReviewContentWidget::class)->currentThread()?->id, 'the caret is on the thread that was asked for');
                 },
             ],
         );
@@ -335,9 +338,9 @@ final class GitHubReviewE2eTest extends TestCase
             $project->path('src/A.php'),
             [
                 200 => function (Tui $tui, $terminal): void {
-                    $this->await(static fn (): bool => [] !== $tui->getById('editor')->decorations->lineAnnotations, what: 'the summary');
-                    $this->assertSame([3 => '✎ bob: Why bee?'], $tui->getById('editor')->decorations->lineAnnotations);
-                    $this->assertSame([], $tui->getById('editor')->decorations->lineBlocksAt(3));
+                    $this->await(static fn (): bool => [] !== Widgets::editor($tui)->decorations->lineAnnotations, what: 'the summary');
+                    $this->assertSame([3 => '✎ bob: Why bee?'], Widgets::editor($tui)->decorations->lineAnnotations);
+                    $this->assertSame([], Widgets::editor($tui)->decorations->lineBlocksAt(3));
                 },
             ],
         );
@@ -354,7 +357,7 @@ final class GitHubReviewE2eTest extends TestCase
             $project->path('src/A.php'),
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal): void {
-                    $editor = $tui->getById('editor');
+                    $editor = Widgets::editor($tui);
                     $this->await(static fn (): bool => [] !== $editor->decorations->lineBlocksAt(3), what: 'the block');
                     $this->assertSame(['✎ bob: Why bee?', '    It was b.'], $editor->decorations->lineBlocksAt(3));
                     $this->assertSame(['✎ carol: Fine.  (resolved)'], $editor->decorations->lineBlocksAt(4), 'shown resolved when asked');
@@ -380,7 +383,7 @@ final class GitHubReviewE2eTest extends TestCase
             $project->path('src/A.php'),
             [
                 200 => function (Tui $tui, $terminal, Ide $ide) use ($project): void {
-                    $editor = $tui->getById('editor');
+                    $editor = Widgets::editor($tui);
                     $this->await(static fn (): bool => [] !== $editor->decorations->lineAnnotations, what: 'A\'s summary');
                     $buffers = Services::resolve($ide, BufferService::class);
 
@@ -420,7 +423,7 @@ final class GitHubReviewE2eTest extends TestCase
 
                     $screen = AnsiUtils::stripAnsiCodes($terminal->getOutput());
                     $this->assertStringContainsString('PR #12 · Tidy the names', $screen, 'the conversation\'s title');
-                    $this->assertStringNotContainsString('+$bee = 2;', \implode("\n", $this->rows($tui->getById('review-diff')->render(new RenderContext(80, 20)))));
+                    $this->assertStringNotContainsString('+$bee = 2;', \implode("\n", $this->rows(Widgets::byId($tui, 'review-diff', ReviewContentWidget::class)->render(new RenderContext(80, 20)))));
                 },
             ],
         );
