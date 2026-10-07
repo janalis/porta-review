@@ -75,6 +75,8 @@ final class ReviewViewController implements ContributedView
         $services->region->setSidebarPanes(new ReviewSidebar($list, $reply));
         $services->region->sidebar()->add($reply);
         $services->region->content()->add($content);
+        // The diff's toolbar sits flush under the window's title bar, as git's does.
+        $services->region->flushContentTop();
 
         $list
             ->onSelect($this->select(...))

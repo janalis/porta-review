@@ -402,8 +402,9 @@ final class LocalReviewE2eTest extends TestCase
                     $tui->handleInput(\sprintf("\x1b[<0;%d;%dm", $rect->col + 11, $row));
                     $this->frame($tui);
 
-                    // Like every other divider, it thickens under the pointer before the drag.
-                    $this->assertStringContainsString(Glyphs::PANE_DIVIDER_ACTIVE, Paint::lines($separator, new RenderContext(1, 5))[0], 'heavy under the pointer, as the others are');
+                    // Like every other divider, it thickens under the pointer before the drag
+                    // — from its second row: the first is the inset beside the flush diff toolbar.
+                    $this->assertStringContainsString(Glyphs::PANE_DIVIDER_ACTIVE, Paint::lines($separator, new RenderContext(1, 5))[1], 'heavy under the pointer, as the others are');
                     $this->assertSame($before + 10, $list->width(), 'the list follows the drag');
                     $this->assertSame($list->width(), Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->width(), 'and the reply box with it');
                 },
@@ -468,6 +469,10 @@ final class LocalReviewE2eTest extends TestCase
                     $content = Widgets::byId($tui, 'review-diff', ReviewContentWidget::class);
                     $pane = $renderer->getWidgetRect($content);
                     \assert(null !== $pane, description: 'the pane was painted');
+                    $window = Services::resolve($ide, ViewWindowPresenter::class)->box();
+                    $this->assertInstanceOf(ModalBox::class, $window);
+                    $this->assertSame($window->startRow + 1, $pane->row, 'the toolbar is flush under the title bar');
+                    $this->assertSame($window->startRow + 2, $at->row, 'the list keeps the top row as its inset');
                     // The toggle's row: the only one on a short screen, the middle one boxed.
                     $header = \array_map(AnsiUtils::stripAnsiCodes(...), Paint::lines($content, new RenderContext($pane->columns, 6)));
                     $row = \array_key_first(\array_filter($header, static fn (string $line): bool => \str_contains($line, 'S show-resolved')));
