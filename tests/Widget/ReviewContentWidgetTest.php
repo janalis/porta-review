@@ -54,7 +54,7 @@ final class ReviewContentWidgetTest extends TestCase
             'diff --git a/src/A.php b/src/A.php',
             '@@ -1,4 +1,4 @@ class A',
             ' <?php',
-            "-\$old = 1;",
+            '-$old = 1;',
             "+\$new\t= 2;",
             ' $keep;',
             '\\ No newline at end of file',
