@@ -51,7 +51,7 @@ final class Sources
     public function resolve(\Closure $onDone): void
     {
         $provider = SourceKind::tryFrom((string) ($this->setting)('provider'));
-        $local = SourceKind::Local === $provider || null === $provider && '' !== $this->picked && [] !== $this->local->ids();
+        $local = SourceKind::Local === $provider || (null === $provider && '' !== $this->picked && [] !== $this->local->ids());
         if ($local) {
             $onDone(new LocalSource($this->local, $this->author, fn (): ?string => $this->picked));
 

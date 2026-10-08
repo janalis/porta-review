@@ -152,7 +152,9 @@ final class SourcesTest extends TestCase
 
         try {
             foreach (['git@github.com:a/b.git', 'git@ghe.corp.com:a/b.git', 'git@gitlab.com:a/b.git'] as $remote) {
-                $sources = $this->sources($remote);
+                // Built for the project it sets up, with $remote as origin; these
+                // Sources are the ones without `gh`.
+                $this->sources($remote);
                 $sources = new Sources(
                     $this->project->dir,
                     new GitProcessRunner($this->project->dir),

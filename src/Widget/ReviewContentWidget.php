@@ -319,7 +319,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
                 foreach ($threads as $thread) {
                     $onOld = Side::Old === $thread->anchor->side && '+' !== $line->origin && $thread->anchor->line === $line->oldNo;
                     $onNew = Side::New === $thread->anchor->side && '-' !== $line->origin && $thread->anchor->line === $line->newNo;
-                    if (!$onOld && !$onNew || \array_key_exists($thread->id, $placed)) {
+                    if ((!$onOld && !$onNew) || \array_key_exists($thread->id, $placed)) {
                         continue;
                     }
                     $placed[$thread->id] = true;
