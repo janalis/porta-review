@@ -21,6 +21,7 @@ final readonly class Json
 
     public static function decode(string $text): self
     {
+        // @noinspection JsonEncodingApiUsageInspection -- another program's output that is not JSON reads as none, it does not throw
         return new self('' === \trim($text) ? null : \json_decode($text, associative: true));
     }
 

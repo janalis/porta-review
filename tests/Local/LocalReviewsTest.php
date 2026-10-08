@@ -114,7 +114,7 @@ final class LocalReviewsTest extends TestCase
         $this->assertSame('t2026T0004', $thread);
         $this->assertSame(
             ['path' => 'src/C.php', 'line' => 7, 'side' => 'new', 'lineText' => 'return 1;'],
-            \json_decode((string) \file_get_contents($this->project->path('.porta/reviews/agent/t2026T0004/thread.json')), associative: true),
+            \json_decode((string) \file_get_contents($this->project->path('.porta/reviews/agent/t2026T0004/thread.json')), associative: true, flags: \JSON_THROW_ON_ERROR),
         );
         $this->assertNotNull($reviews->open('agent', new Anchor('src/C.php', 8), 'Pierre', 'And 2?'));
 

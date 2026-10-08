@@ -149,7 +149,7 @@ final class GitHubReviewE2eTest extends TestCase
     {
         $writes = [];
         foreach ($this->forge->calls() as $call) {
-            $query = (string) (\json_decode($call['stdin'], associative: true)['query'] ?? '');
+            $query = (string) (\json_decode($call['stdin'], associative: true, flags: \JSON_THROW_ON_ERROR)['query'] ?? '');
             if (\str_starts_with($query, 'query(')) {
                 continue;
             }

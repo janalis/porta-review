@@ -134,7 +134,7 @@ final class ReviewCommand extends PluginCommand
             return 'No review "'.$id.'"';
         }
         if ($json) {
-            $output->writeln((string) \json_encode(self::asArray($review), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE));
+            $output->writeln(\json_encode(self::asArray($review), \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE));
 
             return null;
         }

@@ -43,7 +43,7 @@ final readonly class ForgeTransport
      */
     public function request(string $method, string $path, ?array $body, \Closure $onDone): void
     {
-        $json = null === $body ? null : (string) \json_encode($body, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+        $json = null === $body ? null : \json_encode($body, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         $cli = ($this->cli)();
         if (null !== $cli) {
             $command = [$cli, 'api', '--method', $method, $path, '--hostname', $this->host];

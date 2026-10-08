@@ -46,11 +46,11 @@ final class FakeForge
      */
     public function route(string $needle, array $json): self
     {
-        $routes = \is_file($this->dir->path('routes.json')) ? (array) \json_decode((string) \file_get_contents($this->dir->path('routes.json')), associative: true) : [];
+        $routes = \is_file($this->dir->path('routes.json')) ? (array) \json_decode((string) \file_get_contents($this->dir->path('routes.json')), associative: true, flags: \JSON_THROW_ON_ERROR) : [];
         $file = 'route'.\count($routes).'.json';
-        \file_put_contents($this->dir->path($file), (string) \json_encode($json));
+        \file_put_contents($this->dir->path($file), (string) \json_encode($json, \JSON_THROW_ON_ERROR));
         $routes[$needle] = $file;
-        \file_put_contents($this->dir->path('routes.json'), (string) \json_encode($routes));
+        \file_put_contents($this->dir->path('routes.json'), (string) \json_encode($routes, \JSON_THROW_ON_ERROR));
 
         return $this;
     }
@@ -58,7 +58,7 @@ final class FakeForge
     /** @param array<array-key, mixed> $json */
     public function answerJson(array $json): self
     {
-        return $this->answer((string) \json_encode($json));
+        return $this->answer((string) \json_encode($json, \JSON_THROW_ON_ERROR));
     }
 
     public function answerFixture(string $name): self
@@ -73,7 +73,7 @@ final class FakeForge
         $calls = [];
         foreach (\is_file($log) ? (array) \file($log, \FILE_IGNORE_NEW_LINES) : [] as $line) {
             /** @var array{argv: list<string>, stdin: string, name: string} $call */
-            $call = \json_decode((string) $line, associative: true);
+            $call = \json_decode((string) $line, associative: true, flags: \JSON_THROW_ON_ERROR);
             $calls[] = $call;
         }
 
@@ -83,7 +83,7 @@ final class FakeForge
     /** @return array<array-key, mixed> the JSON body the $index-th call sent on stdin */
     public function body(int $index): array
     {
-        $body = \json_decode($this->calls()[$index]['stdin'] ?? '', associative: true);
+        $body = \json_decode($this->calls()[$index]['stdin'] ?? '', associative: true, flags: \JSON_THROW_ON_ERROR);
 
         return \is_array($body) ? $body : [];
     }

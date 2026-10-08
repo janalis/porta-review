@@ -145,7 +145,7 @@ final class LocalReviewE2eTest extends TestCase
                     }, what: 'the new thread');
                     $this->assertSame(
                         ['path' => 'src/A.php', 'line' => 2, 'side' => 'new', 'lineText' => '$total = 0;'],
-                        \json_decode((string) \file_get_contents((string) $meta[0]), associative: true),
+                        \json_decode((string) \file_get_contents((string) $meta[0]), associative: true, flags: \JSON_THROW_ON_ERROR),
                     );
                     $this->awaitPainted($tui, $terminal, 'Start at 1?');
                 },
@@ -483,7 +483,7 @@ final class LocalReviewE2eTest extends TestCase
                     $this->frame($tui);
                     $this->assertTrue($list->selectId('t0'), 'shown now');
                     $this->assertTrue(
-                        (bool) \json_decode((string) \file_get_contents($project->path('.porta.json')), associative: true)['plugins']['review']['showResolved'],
+                        (bool) \json_decode((string) \file_get_contents($project->path('.porta.json')), associative: true, flags: \JSON_THROW_ON_ERROR)['plugins']['review']['showResolved'],
                         'and persisted, as the git toggles are',
                     );
 

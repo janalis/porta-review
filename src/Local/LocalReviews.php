@@ -146,7 +146,7 @@ final readonly class LocalReviews
         $meta = $this->json($path)->array() ?? [];
         $meta['title'] = $title;
 
-        return $this->write($path, (string) \json_encode($meta, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)."\n");
+        return $this->write($path, \json_encode($meta, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)."\n");
     }
 
     /** Add a comment to a thread (or the conversation); false when the thread does not exist. */
@@ -175,7 +175,7 @@ final readonly class LocalReviews
         if (null !== $anchor->lineText) {
             $meta['lineText'] = $anchor->lineText;
         }
-        $written = $this->write($dir.'/'.self::THREAD_FILE, (string) \json_encode($meta, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)."\n");
+        $written = $this->write($dir.'/'.self::THREAD_FILE, \json_encode($meta, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)."\n");
 
         return $written && $this->append($id, $thread, $author, $body) ? $thread : null;
     }
@@ -300,7 +300,7 @@ final readonly class LocalReviews
      */
     private static function isName(string $name): bool
     {
-        return 1 === \preg_match('/^[A-Za-z0-9_][A-Za-z0-9._-]*$/', $name);
+        return 1 === \preg_match('/^\w[A-Za-z0-9._-]*$/', $name);
     }
 
     /** An author, or a review's name, as a file-name part: no separator, no dot-file, never empty. */

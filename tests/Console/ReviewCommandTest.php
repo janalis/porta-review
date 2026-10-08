@@ -55,7 +55,7 @@ final class ReviewCommandTest extends TestCase
         $this->assertSame(0, $this->exec(['action' => 'comment', 'words' => ['Overall', 'fine'], '--author' => 'claude'])->getStatusCode());
         $this->assertSame(0, $this->exec(['action' => 'resolve', 'words' => [$thread]])->getStatusCode());
 
-        $json = \json_decode($this->exec(['action' => 'list', '--json' => true])->getDisplay(), associative: true);
+        $json = \json_decode($this->exec(['action' => 'list', '--json' => true])->getDisplay(), associative: true, flags: \JSON_THROW_ON_ERROR);
         $this->assertIsArray($json);
         $this->assertSame('claude', $json['id'], 'the newest review, when none is named');
         $this->assertTrue($json['threads'][0]['resolved']);
