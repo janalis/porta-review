@@ -173,7 +173,7 @@ final class LocalReviewsTest extends TestCase
         $reviews->append('r', 't', 'a', 'one');
         $reviews->append('r', 't', 'a', 'two');
 
-        $this->assertSame(['one', 'two'], \array_map(static fn ($c): string => $c->body, $reviews->read('r')?->threads[0]->comments ?? []));
+        $this->assertSame(['one', 'two'], \array_map(static fn (Comment $c): string => $c->body, $reviews->read('r')?->threads[0]->comments ?? []));
         $this->assertMatchesRegularExpression('/^\d{8}T\d{6}\.\d{6}Z$/', $reviews->read('r')?->threads[0]->comments[0]->createdAt ?? '');
     }
 
