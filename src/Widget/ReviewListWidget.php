@@ -23,6 +23,7 @@ use Porta\Widget\Support\FillsPaneTrait;
 use Porta\Widget\Support\PanelRowStyle;
 use Porta\Widget\Support\PanelWidth;
 use Symfony\Component\Tui\Input\Key;
+use Symfony\Component\Tui\Input\Keybindings;
 use Symfony\Component\Tui\Render\RenderContext;
 use Symfony\Component\Tui\Widget\AbstractWidget;
 use Symfony\Component\Tui\Widget\FocusableInterface;
@@ -194,44 +195,35 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
     public function handleInput(string $data): void
     {
         $kb = $this->getKeybindings();
-        if ($kb->matches($data, 'exit_view')) {
-            $this->fire($this->onExit);
-
-            return;
-        }
-        if ($kb->matches($data, 'focus_next_pane')) {
-            $this->fire($this->onFocusNext);
-
-            return;
-        }
         $before = $this->list->selected();
-        if (ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), 10)) {
-            // Step over a heading in the direction of travel, or stay put at an end.
-            $direction = $this->list->selected() < $before ? -1 : 1;
-            $this->list->select($this->firstEntry($this->list->selected(), $direction) ?? $this->firstEntry($this->list->selected(), -$direction) ?? $before);
-            $this->invalidate();
-            if ($before !== $this->list->selected()) {
-                $this->choose();
-            }
+        match (true) {
+            $kb->matches($data, 'exit_view') => $this->fire($this->onExit),
+            $kb->matches($data, 'focus_next_pane') => $this->fire($this->onFocusNext),
+            ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), 10) => $this->moved($before),
+            $kb->matches($data, 'select') => $this->choose(),
+            default => $this->runVerb($data, $kb),
+        };
+    }
 
-            return;
-        }
-        if ($kb->matches($data, 'select')) {
+    /** The selection moved off $before: step over a heading in the direction of travel, or stay put at an end. */
+    private function moved(int $before): void
+    {
+        $direction = $this->list->selected() < $before ? -1 : 1;
+        $this->list->select($this->firstEntry($this->list->selected(), $direction) ?? $this->firstEntry($this->list->selected(), -$direction) ?? $before);
+        $this->invalidate();
+        if ($before !== $this->list->selected()) {
             $this->choose();
-
-            return;
         }
-        foreach (\array_keys($this->verbs) as $action) {
-            if (!$kb->matches($data, $action)) {
-                continue;
-            }
-            // Refresh and a comment on the review need no entry; the rest act on the selected one.
-            $id = $this->selectedId();
-            if (null !== $id || \in_array($action, ['refresh', 'comment', 'toggle_resolved'], strict: true)) {
-                $this->verbs[$action]($id ?? self::CONVERSATION);
-            }
+    }
 
-            return;
+    /** The first verb bound to the key. */
+    private function runVerb(string $data, Keybindings $kb): void
+    {
+        $action = \array_find(\array_keys($this->verbs), static fn (string $action): bool => $kb->matches($data, $action));
+        // Refresh and a comment on the review need no entry; the rest act on the selected one.
+        $id = null === $action ? null : $this->selectedId();
+        if (null !== $action && (null !== $id || \in_array($action, ['refresh', 'comment', 'toggle_resolved'], strict: true))) {
+            $this->verbs[$action]($id ?? self::CONVERSATION);
         }
     }
 

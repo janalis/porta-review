@@ -30,6 +30,7 @@ use Porta\Widget\Support\FillsPaneTrait;
 use Porta\Widget\Support\OptionTagState;
 use Porta\Widget\Support\PanelRowStyle;
 use Symfony\Component\Tui\Input\Key;
+use Symfony\Component\Tui\Input\Keybindings;
 use Symfony\Component\Tui\Render\RenderContext;
 use Symfony\Component\Tui\Widget\AbstractWidget;
 use Symfony\Component\Tui\Widget\FocusableInterface;
@@ -422,38 +423,22 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     public function handleInput(string $data): void
     {
         $kb = $this->getKeybindings();
-        if ($kb->matches($data, 'exit_view')) {
-            $this->fire($this->onExit);
+        match (true) {
+            $kb->matches($data, 'exit_view') => $this->fire($this->onExit),
+            $kb->matches($data, 'focus_next_pane') => $this->fire($this->onFocusNext),
+            $kb->matches($data, 'toggle_resolved') => $this->fire($this->onToggleResolved),
+            ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), 20) => $this->invalidate(),
+            default => $this->runVerb($data, $kb),
+        };
+    }
 
-            return;
-        }
-        if ($kb->matches($data, 'focus_next_pane')) {
-            $this->fire($this->onFocusNext);
-
-            return;
-        }
-        if ($kb->matches($data, 'toggle_resolved')) {
-            if (null !== $this->onToggleResolved) {
-                ($this->onToggleResolved)();
-            }
-
-            return;
-        }
-        if (ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), 20)) {
-            $this->invalidate();
-
-            return;
-        }
-        foreach (\array_keys($this->verbs) as $action) {
-            if (!$kb->matches($data, $action)) {
-                continue;
-            }
-            $row = $this->rows[$this->list->selected()] ?? null;
-            if (null !== $row) {
-                $this->verbs[$action]($row['anchor'], $row['thread']);
-            }
-
-            return;
+    /** The first verb bound to the key, on the selected row's line and thread. */
+    private function runVerb(string $data, Keybindings $kb): void
+    {
+        $action = \array_find(\array_keys($this->verbs), static fn (string $action): bool => $kb->matches($data, $action));
+        $row = null === $action ? null : $this->rows[$this->list->selected()] ?? null;
+        if (null !== $action && null !== $row) {
+            $this->verbs[$action]($row['anchor'], $row['thread']);
         }
     }
 

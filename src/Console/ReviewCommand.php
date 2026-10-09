@@ -114,16 +114,16 @@ final class ReviewCommand extends PluginCommand
         $line = (int) $parts[2];
         $lines = \explode("\n", Files::read($root.'/'.$path));
         $body = $this->message($words);
-        if ('' === $body) {
-            return 'add needs a message';
+        $thread = '' === $body ? null : $reviews->open($id, new Anchor($path, $line, Side::New, $lines[$line - 1] ?? null), $author, $body);
+        if (null !== $thread) {
+            $output->writeln($thread);
         }
-        $thread = $reviews->open($id, new Anchor($path, $line, Side::New, $lines[$line - 1] ?? null), $author, $body);
-        if (null === $thread) {
-            return 'Could not write the thread';
-        }
-        $output->writeln($thread);
 
-        return null;
+        return match (true) {
+            '' === $body => 'add needs a message',
+            null === $thread => 'Could not write the thread',
+            default => null,
+        };
     }
 
     // @mago-expect lint:no-boolean-flag-parameter -- --json IS the choice of format.
@@ -133,23 +133,30 @@ final class ReviewCommand extends PluginCommand
         if (null === $review) {
             return 'No review "'.$id.'"';
         }
-        if ($json) {
-            $output->writeln(\json_encode(self::asArray($review), \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE));
+        $output->writeln(
+            $json
+                ? \json_encode(self::asArray($review), \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)
+                : self::listing($review),
+        );
 
-            return null;
-        }
-        $output->writeln($review->id.' — '.$review->title);
+        return null;
+    }
+
+    /** @return list<string> $review as text: its threads with their comments, then the conversation */
+    private static function listing(Review $review): array
+    {
+        $lines = [$review->id.' — '.$review->title];
         foreach ($review->threads as $thread) {
-            $output->writeln(\sprintf('  %s  %s:%d  %s', $thread->id, $thread->anchor->path, $thread->anchor->line, $thread->resolved ? 'resolved' : 'open'));
+            $lines[] = \sprintf('  %s  %s:%d  %s', $thread->id, $thread->anchor->path, $thread->anchor->line, $thread->resolved ? 'resolved' : 'open');
             foreach ($thread->comments as $comment) {
-                $output->writeln('    '.$comment->author.': '.\str_replace("\n", replace: "\n      ", subject: $comment->body));
+                $lines[] = '    '.$comment->author.': '.\str_replace("\n", replace: "\n      ", subject: $comment->body);
             }
         }
         foreach ($review->conversation as $comment) {
-            $output->writeln('  review: '.$comment->author.': '.$comment->body);
+            $lines[] = '  review: '.$comment->author.': '.$comment->body;
         }
 
-        return null;
+        return $lines;
     }
 
     // @mago-expect lint:no-boolean-flag-parameter -- the bool is the write's outcome, turned into a sentence.

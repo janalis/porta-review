@@ -100,11 +100,8 @@ final readonly class LocalReviews
 
     public function read(string $id): ?Review
     {
-        if (!self::isName($id)) {
-            return null;
-        }
-        $dir = $this->directory().'/'.$id;
-        if (!\is_dir($dir)) {
+        $dir = self::isName($id) ? $this->directory().'/'.$id : null;
+        if (null === $dir || !\is_dir($dir)) {
             return null;
         }
         $meta = $this->json($dir.'/review.json');
@@ -156,11 +153,8 @@ final readonly class LocalReviews
             return false;
         }
         $dir = $this->directory().'/'.$id.'/'.$thread;
-        if (self::CONVERSATION !== $thread && !\is_dir($dir)) {
-            return false;
-        }
 
-        return $this->write($dir.'/'.$this->stamp().'--'.self::fileSafe($author).'.md', $body);
+        return (self::CONVERSATION === $thread || \is_dir($dir)) && $this->write($dir.'/'.$this->stamp().'--'.self::fileSafe($author).'.md', $body);
     }
 
     /** Start a thread on a line; the new thread's id, or null when nothing could be written. */
@@ -187,14 +181,14 @@ final readonly class LocalReviews
             return false;
         }
         $dir = $this->directory().'/'.$id.'/'.$thread;
-        if (!\is_dir($dir)) {
-            return false;
-        }
         $marker = $dir.'/'.self::RESOLVED;
 
-        if ($resolved) {
-            return $this->write($marker, '');
-        }
+        return \is_dir($dir) && ($resolved ? $this->write($marker, '') : $this->unmark($marker));
+    }
+
+    /** Remove a thread's resolved $marker; false when it cannot be. */
+    private function unmark(string $marker): bool
+    {
         try {
             $this->files->remove($marker);
         } catch (IOException) {

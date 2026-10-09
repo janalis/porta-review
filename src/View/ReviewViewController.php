@@ -223,21 +223,21 @@ final class ReviewViewController implements ContributedView
         if (null !== $thread && null === $review?->thread($thread->id)) {
             $this->aim(null, '');
         }
-        if (null === $review) {
-            ++$this->generation;
-            $this->content->clearContent();
-
-            return;
-        }
-        // Re-read whatever the pane shows, now with the answer's threads.
-        if (null === $this->shownPath) {
-            $this->select($this->list->selectedId() ?? ReviewListWidget::CONVERSATION);
-
-            return;
-        }
-        // A file still loading is not on the pane yet: what it was opened on is
+        // Re-read whatever the pane shows, now with the answer's threads. A
+        // file still loading is not on the pane yet: what it was opened on is
         // the focus, not what the pane shows from before.
-        $this->loadFile($review, $this->shownPath, null === $this->loading ? $this->content->currentThread()?->id : $this->loading['focus']);
+        match (true) {
+            null === $review => $this->clearShown(),
+            null === $this->shownPath => $this->select($this->list->selectedId() ?? ReviewListWidget::CONVERSATION),
+            default => $this->loadFile($review, $this->shownPath, null === $this->loading ? $this->content->currentThread()?->id : $this->loading['focus']),
+        };
+    }
+
+    /** No review any more: nothing to show, and no answer in flight still wanted. */
+    private function clearShown(): void
+    {
+        ++$this->generation;
+        $this->content->clearContent();
     }
 
     /**

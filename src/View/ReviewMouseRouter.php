@@ -44,29 +44,36 @@ final readonly class ReviewMouseRouter implements ViewPointer
     #[\Override]
     public function press(MouseEvent $mouse): bool
     {
-        $rel = $this->hit->hit($this->list, $mouse->row, $mouse->col);
-        if (null !== $rel) {
-            $this->host->focus($this->list);
-            $this->list->handleClick($rel['row']);
+        return match (true) {
+            null !== ($rel = $this->hit->hit($this->list, $mouse->row, $mouse->col)) => $this->pressList($rel['row']),
+            null !== ($rel = $this->hit->hit($this->reply, $mouse->row, $mouse->col)) => $this->pressReply($rel['row']),
+            null !== ($rel = $this->hit->hit($this->content, $mouse->row, $mouse->col)) => $this->pressContent($rel['row'], $rel['col']),
+            default => false,
+        };
+    }
 
-            return true;
-        }
-        $rel = $this->hit->hit($this->reply, $mouse->row, $mouse->col);
-        if (null !== $rel) {
-            $this->host->focus($this->reply);
-            $this->reply->handleClick($rel['row']);
+    private function pressList(int $row): bool
+    {
+        $this->host->focus($this->list);
+        $this->list->handleClick($row);
 
-            return true;
-        }
-        $rel = $this->hit->hit($this->content, $mouse->row, $mouse->col);
-        if (null !== $rel) {
-            $this->host->focus($this->content);
-            $this->content->handleClick($rel['row'], $rel['col']);
+        return true;
+    }
 
-            return true;
-        }
+    private function pressReply(int $row): bool
+    {
+        $this->host->focus($this->reply);
+        $this->reply->handleClick($row);
 
-        return false;
+        return true;
+    }
+
+    private function pressContent(int $row, int $col): bool
+    {
+        $this->host->focus($this->content);
+        $this->content->handleClick($row, $col);
+
+        return true;
     }
 
     #[\Override]
