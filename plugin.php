@@ -129,7 +129,7 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
             $list->setId('review-threads');
             $reply = new ReplyBoxWidget($services->translator, $width, $services->styles, $services->cursorStyle, $services->density);
             $reply->setId('review-reply');
-            $content = new ReviewContentWidget($services->translator, $services->styles, $services->density);
+            $content = new ReviewContentWidget($services->translator, $services->styles, $services->density, $api->syntaxTheme());
             $content->setId('review-diff');
 
             return $view = new ReviewViewController($services, $api, $store, $git, $list, $reply, $content, $showResolved);

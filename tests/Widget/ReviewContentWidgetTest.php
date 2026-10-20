@@ -6,6 +6,9 @@ namespace Porta\ReviewPlugin\Tests\Widget;
 
 use PHPUnit\Framework\TestCase;
 use Porta\DiffPlugin\DiffDocument;
+use Porta\Highlight\DarkTerminalTheme;
+use Porta\Highlight\LightTerminalTheme;
+use Porta\Highlight\SwitchableTerminalTheme;
 use Porta\I18n\Translator;
 use Porta\ReviewPlugin\Model\Anchor;
 use Porta\ReviewPlugin\Model\Comment;
@@ -14,7 +17,9 @@ use Porta\ReviewPlugin\Model\Thread;
 use Porta\ReviewPlugin\Widget\ReviewContentWidget;
 use Porta\Tests\Support\CompactScreen;
 use Porta\Tests\Support\RendersWidget;
+use Porta\Ui\Role;
 use Porta\Ui\Theme\Styles;
+use Symfony\Component\Tui\Ansi\AnsiUtils;
 use Symfony\Component\Tui\Render\RenderContext;
 
 final class ReviewContentWidgetTest extends TestCase
@@ -78,7 +83,7 @@ final class ReviewContentWidgetTest extends TestCase
         $this->assertSame('src/A.php                                 S show-resolved', \trim($screen[0]), 'the title, and the toolbar toggle');
         $this->assertSame(
             [
-                '@@ -1,4 +1,4 @@ class A',
+                ' @@ -1,4 +1,4 @@ class A',
                 '   1    1 │ <?php',
                 '   2      │-$old = 1;',
                 '    ✎ L2  resolved',
@@ -99,6 +104,54 @@ final class ReviewContentWidgetTest extends TestCase
         $this->assertIsInt($outdated, 'a thread the diff does not show still gets said');
         $this->assertGreaterThan(\array_search('        2 │+$new    = 2;', $screen, strict: true), $outdated, 'after the diff');
         $this->assertSame('new', $widget->currentThread()?->id, 'the caret lands on the focused thread');
+    }
+
+    public function testTheCodeRowsAreTheDiffPanesOwn(): void
+    {
+        // Drawn by the diff plugin's renderer, as the git view draws them: the
+        // green and red bands, and the changed words a shade stronger.
+        $widget = $this->widget();
+        $widget->setFocused(false);
+        $widget->showFile('src/A.php', self::diff(), '', []);
+        $styles = Styles::dark();
+
+        $raw = $widget->render(new RenderContext(60, 12));
+        $row = static fn (string $text): string => (string) \array_find($raw, static fn (string $line): bool => \str_contains(AnsiUtils::stripAnsiCodes($line), $text));
+
+        $this->assertStringContainsString($styles->of(Role::DeletedRowBg)->getAnsiRestore(), $row('-$old'), 'the deleted line on its band');
+        $this->assertStringContainsString($styles->of(Role::AddedRowBg)->getAnsiRestore(), $row('+$new'), 'the added line on its band');
+        $this->assertStringContainsString($styles->of(Role::AddEmphasisBg)->getAnsiRestore(), $row('+$new'), 'its changed words stronger');
+        $this->assertStringNotContainsString($styles->of(Role::AddedRowBg)->getAnsiRestore(), $row('$keep'), 'context has no band');
+    }
+
+    public function testAThemeSwitchRecoloursTheCodeAndKeepsTheCaretsThread(): void
+    {
+        $theme = new SwitchableTerminalTheme(new DarkTerminalTheme());
+        $widget = new ReviewContentWidget(new Translator('en'), Styles::dark(), CompactScreen::density(), $theme);
+        $widget->showFile('src/A.php', self::diff(), '', [self::thread('new', 2), self::thread('old', 2, Side::Old)], focus: 'new');
+        $dark = $widget->render(new RenderContext(60, 20));
+
+        $theme->switchTo(new LightTerminalTheme());
+        $this->assertSame($dark, $widget->render(new RenderContext(60, 20)), 'the rows bake the palette in: nothing changes until the refresh');
+        $widget->refreshTheme();
+        $light = $widget->render(new RenderContext(60, 20));
+
+        $this->assertNotSame($dark, $light, 'the code re-coloured');
+        $this->assertSame(\array_map(AnsiUtils::stripAnsiCodes(...), $dark), \array_map(AnsiUtils::stripAnsiCodes(...), $light), 'the same rows');
+        $this->assertSame('new', $widget->currentThread()?->id, 'the caret still on its thread');
+    }
+
+    public function testAThemeSwitchOffAThreadKeepsTheCaretsRow(): void
+    {
+        $widget = $this->widget();
+        $widget->showFile('src/A.php', self::diff(), '', []);
+        $widget->handleInput("\x1b[B");
+        $widget->handleInput("\x1b[B");
+
+        $widget->refreshTheme();
+
+        $widget->handleInput('o');
+        $this->assertSame(['open src/A.php:2:old:$old = 1; -'], $this->acted, 'still on the deleted line, not back on the hunk header');
     }
 
     public function testAFileWithNoDiffShowsItsTextAndPlacesThreadsByTheirLinesText(): void

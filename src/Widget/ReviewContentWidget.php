@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Porta\ReviewPlugin\Widget;
 
 use Porta\DiffPlugin\DiffDocument;
+use Porta\DiffPlugin\DiffHighlights;
+use Porta\DiffPlugin\DiffRowKind;
+use Porta\DiffPlugin\Widget\DiffViewRenderer;
 use Porta\I18n\Translator;
 use Porta\ReviewPlugin\Editor\LineTranslator;
 use Porta\ReviewPlugin\Model\Anchor;
@@ -20,6 +23,7 @@ use Porta\Ui\Markup\MarkupParser;
 use Porta\Ui\Role;
 use Porta\Ui\ScreenDensity;
 use Porta\Ui\Theme\Styles;
+use Porta\Ui\ThemeRefreshable;
 use Porta\Ui\Tooltip;
 use Porta\Ui\TooltipProvider;
 use Porta\Widget\PaneNavigationCallbacks;
@@ -37,6 +41,7 @@ use Symfony\Component\Tui\Widget\FocusableInterface;
 use Symfony\Component\Tui\Widget\FocusableTrait;
 use Symfony\Component\Tui\Widget\KeybindingsTrait;
 use Symfony\Component\Tui\Widget\VerticallyExpandableInterface;
+use Tempest\Highlight\TerminalTheme;
 
 /**
  * The review view's right pane: one file's review diff with each thread drawn
@@ -50,8 +55,13 @@ use Symfony\Component\Tui\Widget\VerticallyExpandableInterface;
  * Every row is one terminal line; a thread's block is as many rows as its
  * comments wrap to, so the caret walks through a conversation as it walks
  * through code, and `r` / `x` act on the thread it is in.
+ *
+ * A diff's code rows are the diff plugin's, drawn by {@see DiffViewRenderer}
+ * as the git view draws them — syntax colours, the green and red bands, the
+ * changed words a shade stronger — and arrive here already styled (`ansi`);
+ * every other row is markup.
  */
-final class ReviewContentWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface, MenuOverlayHost, TooltipProvider
+final class ReviewContentWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface, MenuOverlayHost, ThemeRefreshable, TooltipProvider
 {
     use MenuOverlayHostTrait;
     use FillsPaneTrait;
@@ -60,7 +70,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     use PaneNavigationCallbacks;
     use PanelRowStyle;
 
-    /** @var list<array{text: string, anchor: ?Anchor, thread: ?Thread}> each row as markup, and what it stands for */
+    /** @var list<array{text: string, anchor: ?Anchor, thread: ?Thread, ansi?: string}> each row as markup, and what it stands for */
     private array $rows = [];
 
     private string $title = '';
@@ -70,7 +80,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     /** The width the rows were built for; a thread's text re-wraps when it changes. */
     private int $builtWidth = 0;
 
-    /** @var \Closure(int): list<array{text: string, anchor: ?Anchor, thread: ?Thread}>|null rebuilds the rows at a width */
+    /** @var \Closure(int): list<array{text: string, anchor: ?Anchor, thread: ?Thread, ansi?: string}>|null rebuilds the rows at a width */
     private ?\Closure $builder = null;
 
     /** @var array<string, \Closure(?Anchor, ?Thread): void> */
@@ -93,15 +103,30 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
 
     private readonly ScreenDensity $density;
 
+    private readonly DiffHighlights $highlights;
+
     public function __construct(
         private readonly Translator $translator,
         ?Styles $styles = null,
         ?ScreenDensity $density = null,
+        ?TerminalTheme $syntaxTheme = null,
     ) {
         $this->initStyles($styles);
         $this->list = new ListSelection();
         $this->buttonZones = new ClickZones();
         $this->density = $density ?? new ScreenDensity();
+        $this->highlights = new DiffHighlights($syntaxTheme);
+    }
+
+    /** The code rows bake the syntax palette in: re-colour them. */
+    #[\Override]
+    public function refreshTheme(): void
+    {
+        $this->highlights->refreshTheme();
+        // The same rows come back, re-coloured: the caret keeps its index.
+        $selected = $this->list->selected();
+        $this->rebuild(null, null);
+        $this->list->select($selected);
     }
 
     /** @param \Closure(): void $toggle */
@@ -295,28 +320,25 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     /**
      * @param list<Thread> $threads
      *
-     * @return list<array{text: string, anchor: ?Anchor, thread: ?Thread}>
+     * @return list<array{text: string, anchor: ?Anchor, thread: ?Thread, ansi?: string}>
      */
     private function diffRows(string $path, DiffDocument $diff, array $threads, int $width): array
     {
+        // Never focused and with no cursor of its own: this pane's caret is
+        // its row list, shaded over the band in render().
+        $renderer = new DiffViewRenderer($diff, $this->highlights->of($diff, $path), 0, -1, null, false, null, $this->styles, expandable: false);
         $rows = [];
         $placed = [];
-        foreach ($diff->hunks as $hunk) {
-            $rows[] = ['text' => '<hunk>'.MarkupParser::escape($hunk->header()).'</>', 'anchor' => null, 'thread' => null];
-            foreach ($hunk->lines as $line) {
+        foreach ($diff->hunks as $h => $hunk) {
+            $rows[] = ['text' => '', 'anchor' => null, 'thread' => null, 'ansi' => $renderer->row(-1, ['kind' => DiffRowKind::Hunk, 'hunk' => $h], $width)];
+            foreach ($hunk->lines as $l => $line) {
                 if ('\\' === $line->origin) {
                     continue;
                 }
                 $side = '-' === $line->origin ? Side::Old : Side::New;
                 $number = Side::Old === $side ? $line->oldNo : $line->newNo;
                 $anchor = null === $number ? null : new Anchor($path, $number, $side, $line->text);
-                $tag = match ($line->origin) {
-                    '+' => 'added',
-                    '-' => 'deleted',
-                    default => null,
-                };
-                $code = self::number($line->oldNo).self::number($line->newNo).Glyphs::DIFF_COLUMN.$line->origin.MarkupParser::escape(self::untab($line->text));
-                $rows[] = ['text' => null === $tag ? $code : "<{$tag}>{$code}</>", 'anchor' => $anchor, 'thread' => null];
+                $rows[] = ['text' => '', 'anchor' => $anchor, 'thread' => null, 'ansi' => $renderer->row(-1, ['kind' => DiffRowKind::Line, 'hunk' => $h, 'line' => $l], $width)];
                 foreach ($threads as $thread) {
                     $onOld = Side::Old === $thread->anchor->side && '+' !== $line->origin && $thread->anchor->line === $line->oldNo;
                     $onNew = Side::New === $thread->anchor->side && '-' !== $line->origin && $thread->anchor->line === $line->newNo;
@@ -343,7 +365,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     /**
      * @param list<Thread> $threads
      *
-     * @return list<array{text: string, anchor: ?Anchor, thread: ?Thread}>
+     * @return list<array{text: string, anchor: ?Anchor, thread: ?Thread, ansi?: string}>
      */
     private function fileRows(string $path, string $text, array $threads, int $width): array
     {
@@ -372,7 +394,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         return $rows;
     }
 
-    /** @return list<array{text: string, anchor: ?Anchor, thread: ?Thread}> */
+    /** @return list<array{text: string, anchor: ?Anchor, thread: ?Thread, ansi?: string}> */
     private function threadRows(Thread $thread, int $width): array
     {
         $state = match (true) {
@@ -389,7 +411,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         return $rows;
     }
 
-    /** @return list<array{text: string, anchor: ?Anchor, thread: ?Thread}> */
+    /** @return list<array{text: string, anchor: ?Anchor, thread: ?Thread, ansi?: string}> */
     private function commentRows(Comment $comment, ?Thread $thread, int $width, string $indent): array
     {
         $indentWidth = \mb_strlen($indent);
@@ -466,7 +488,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
                 continue;
             }
             $selected = $this->list->isSelected($scroll + $row);
-            $text = AnsiText::truncate($this->styles->format($entry['text']), $width, pad: true);
+            $text = AnsiText::truncate($entry['ansi'] ?? $this->styles->format($entry['text']), $width, pad: true);
             $lines[] = $selected && $this->focused ? $this->shadeRow($text, true, hovered: false) : $text;
         }
 

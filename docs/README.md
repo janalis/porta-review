@@ -62,8 +62,10 @@ the view answers the mouse — an entry, a row, the Send button.
   `✓` and dimmed.
 - **Left, bottom — the reply box.** Its legend says where the words will go
   before you type them. `Ctrl+Enter` sends.
-- **Right — the thread's file.** The review's own diff, with each thread
-  written under the line it is about. When there is no diff to show, it shows
+- **Right — the thread's file.** The review's own diff, drawn as the git view
+  draws one — syntax colours, green and red bands, the changed words a shade
+  stronger — with each thread written under the line it is about. When there
+  is no diff to show, it shows
   the file itself: a local review of a file with nothing uncommitted, or a
   forge review whose commits you have not fetched. The Conversation shows
   here too.
