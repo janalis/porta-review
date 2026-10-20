@@ -62,7 +62,7 @@ final class GitHubReviewE2eTest extends TestCase
         $project = new TempProject([
             'src/A.php' => "<?php\n\$a = 1;\n\$b = 2;\n\$c = 3;\n",
             'src/B.php' => "<?php\n",
-            '.porta.json' => '{"enabledPlugins":["git","review"],"plugins":{"review":{"ghBinary":"'.FakeForge::SCRIPT.'","editorDisplay":"'.$display.'","showResolved":'.$resolved.'}}}',
+            '.porta.json' => '{"enabledPlugins":["diff","git","review"],"plugins":{"review":{"ghBinary":"'.FakeForge::SCRIPT.'","editorDisplay":"'.$display.'","showResolved":'.$resolved.'}}}',
         ]);
         $project->initGit('feature/tidy');
         $project->git('remote', 'add', 'origin', 'git@github.com:acme/app.git');

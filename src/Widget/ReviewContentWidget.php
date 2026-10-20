@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Porta\ReviewPlugin\Widget;
 
-use Porta\GitPlugin\Diff\DiffDocument;
+use Porta\DiffPlugin\DiffDocument;
 use Porta\I18n\Translator;
 use Porta\ReviewPlugin\Editor\LineTranslator;
 use Porta\ReviewPlugin\Model\Anchor;

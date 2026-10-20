@@ -50,7 +50,7 @@ final class LocalReviewE2eTest extends TestCase
     use ScreenReads;
     use UsesBundledPlugins;
 
-    private const string CONFIG = '{"enabledPlugins":["git","review"],"plugins":{"review":{"provider":"local"}}}';
+    private const string CONFIG = '{"enabledPlugins":["diff","git","review"],"plugins":{"review":{"provider":"local"}}}';
 
     private static function project(): TempProject
     {

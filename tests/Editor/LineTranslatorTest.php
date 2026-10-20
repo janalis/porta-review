@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Porta\ReviewPlugin\Tests\Editor;
 
 use PHPUnit\Framework\TestCase;
-use Porta\GitPlugin\Diff\DiffDocument;
+use Porta\DiffPlugin\DiffDocument;
 use Porta\ReviewPlugin\Editor\LineTranslator;
 
 final class LineTranslatorTest extends TestCase

@@ -18,6 +18,7 @@
     "extra": {
         "porta": {
             "requires": [
+                "diff",
                 "git"
             ],
             "commands": {

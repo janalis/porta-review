@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Porta\ReviewPlugin\Editor;
 
-use Porta\GitPlugin\Diff\DiffDocument;
+use Porta\DiffPlugin\DiffDocument;
 
 /**
  * Where a review's line is in the working copy now.

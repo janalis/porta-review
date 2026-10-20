@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Porta\ReviewPlugin\Editor;
 
-use Porta\GitPlugin\Diff\DiffDocument;
+use Porta\DiffPlugin\DiffDocument;
 use Porta\GitPlugin\Process\GitProcessRunner;
 use Porta\Plugin\Api\PluginApi;
 use Porta\ReviewPlugin\Model\ProjectPath;

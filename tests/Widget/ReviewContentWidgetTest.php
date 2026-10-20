@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Porta\ReviewPlugin\Tests\Widget;
 
 use PHPUnit\Framework\TestCase;
-use Porta\GitPlugin\Diff\DiffDocument;
+use Porta\DiffPlugin\DiffDocument;
 use Porta\I18n\Translator;
 use Porta\ReviewPlugin\Model\Anchor;
 use Porta\ReviewPlugin\Model\Comment;
