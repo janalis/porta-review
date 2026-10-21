@@ -299,6 +299,24 @@ final class ReviewContentWidgetTest extends TestCase
         $this->assertCount(5, \array_filter($this->screen($widget, 8, 40), static fn (string $row): bool => '' !== \trim($row)), 'one row each again: the header, the hunk and three lines');
     }
 
+    /** Wrapped, a wider pane gives the long line fewer rows: the caret keeps its line, not its index. */
+    public function testAResizeUnderWrapKeepsTheCaretsLine(): void
+    {
+        $widget = $this->widget();
+        $widget->useSoftWrap();
+        $widget->showFile('src/A.php', DiffDocument::parse(\implode("\n", ['diff --git a/src/A.php b/src/A.php', '@@ -1,3 +1,3 @@', '-x', '+'.\str_repeat('n', times: 40), ' $keep;', ' $after;'])
+            ."\n"), '', []);
+        $this->screen($widget, 8, 40); // the n's on two rows
+        foreach (\range(1, end: 4) as $down) {
+            $widget->handleInput("\x1b[B");
+        }
+
+        $this->screen($widget, 8, 100); // on one
+        $widget->handleInput('o');
+
+        $this->assertSame(['open src/A.php:2:new:$keep; -'], $this->acted);
+    }
+
     /** Wrap toggled with the caret in a thread: it stays in the thread. */
     public function testTurningWrapOnKeepsTheCaretsThread(): void
     {

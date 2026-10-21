@@ -288,19 +288,23 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         }
     }
 
-    /** The same content in rows of another height: the caret stays on its thread, else on its line. */
-    private function reflow(): void
+    /**
+     * The same content in rows of another height — wrap toggled, or $width
+     * changed — with the caret on its thread, else on its line's first row,
+     * else at its index: the rows above it may now be more or fewer.
+     */
+    private function reflow(?int $width = null): void
     {
-        $row = $this->rows[$this->list->selected()] ?? null;
-        $this->rebuild(null, $row['thread']->id ?? null);
-        $anchor = $row['anchor'] ?? null;
-        $index =
-            null === $anchor || null !== ($row['thread'] ?? null)
-                ? null
-                : \array_find_key($this->rows, static fn (array $other): bool => $anchor->line === $other['anchor']?->line && $anchor->side === $other['anchor']->side);
-        if (\is_int($index)) {
-            $this->list->select($index);
+        $selected = $this->list->selected();
+        $row = $this->rows[$selected] ?? null;
+        $thread = $row['thread'] ?? null;
+        $this->rebuild($width, $thread?->id);
+        if (null !== $thread) {
+            return;
         }
+        $anchor = $row['anchor'] ?? null;
+        $index = null === $anchor ? null : \array_find_key($this->rows, static fn (array $other): bool => $anchor->line === $other['anchor']?->line && $anchor->side === $other['anchor']->side);
+        $this->list->select(\is_int($index) ? $index : \min($selected, \max(0, \count($this->rows) - 1)));
     }
 
     /** @param list<Comment> $comments */
@@ -540,12 +544,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         $width = \max(1, $context->getColumns());
         $height = \max(2, $context->getRows() > 0 ? $context->getRows() : 20);
         if ($width !== $this->builtWidth && null !== $this->builder) {
-            $selected = $this->list->selected();
-            $thread = $this->currentThread()?->id;
-            $this->rebuild($width, $thread);
-            if (null === $thread) {
-                $this->list->select(\min($selected, \max(0, \count($this->rows) - 1)));
-            }
+            $this->reflow($width);
         }
         $lines = $this->header(' '.('' === $this->title ? $this->translator->trans('Review') : $this->title), $width);
         $this->headerRows = \count($lines);
