@@ -7,7 +7,9 @@ namespace Porta\ReviewPlugin\Widget;
 use Porta\DiffPlugin\DiffDocument;
 use Porta\DiffPlugin\DiffHighlights;
 use Porta\DiffPlugin\DiffRowKind;
+use Porta\DiffPlugin\Widget\DiffRowHeights;
 use Porta\DiffPlugin\Widget\DiffViewRenderer;
+use Porta\Editor\WrapLayout;
 use Porta\I18n\Translator;
 use Porta\ReviewPlugin\Editor\LineTranslator;
 use Porta\ReviewPlugin\Model\Anchor;
@@ -33,6 +35,7 @@ use Porta\Widget\Render\MenuOverlayHostTrait;
 use Porta\Widget\Support\FillsPaneTrait;
 use Porta\Widget\Support\OptionTagState;
 use Porta\Widget\Support\PanelRowStyle;
+use Symfony\Component\Tui\Ansi\AnsiUtils;
 use Symfony\Component\Tui\Input\Key;
 use Symfony\Component\Tui\Input\Keybindings;
 use Symfony\Component\Tui\Render\RenderContext;
@@ -59,7 +62,9 @@ use Tempest\Highlight\TerminalTheme;
  * A diff's code rows are the diff plugin's, drawn by {@see DiffViewRenderer}
  * as the git view draws them — syntax colours, the green and red bands, the
  * changed words a shade stronger — and arrive here already styled (`ansi`);
- * every other row is markup.
+ * every other row is markup. Under core's soft wrap a long code line takes
+ * one row per screen row it breaks into, each carrying the line's anchor, so
+ * a key on any of them acts on the line.
  */
 final class ReviewContentWidget extends AbstractWidget implements FocusableInterface, VerticallyExpandableInterface, MenuOverlayHost, ThemeRefreshable, TooltipProvider
 {
@@ -73,6 +78,9 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     /** @var list<array{text: string, anchor: ?Anchor, thread: ?Thread, ansi?: string}> each row as markup, and what it stands for */
     private array $rows = [];
 
+    /** A file row's code starts after the number, the column and a space. */
+    private const int CODE_INDENT = 7;
+
     private string $title = '';
 
     private readonly ListSelection $list;
@@ -85,6 +93,9 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
 
     /** @var array<string, \Closure(?Anchor, ?Thread): void> */
     private array $verbs = [];
+
+    /** Soft wrap: a long code line continues on the rows below. */
+    private bool $wrap = false;
 
     /** Mirror of the view's show-resolved state, for the toolbar toggle. */
     private bool $showResolved = false;
@@ -259,6 +270,39 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         $this->rebuild(null, $focus);
     }
 
+    /** Break long code lines onto the rows below, as the editor's soft wrap does. */
+    public function useSoftWrap(): void
+    {
+        if (!$this->wrap) {
+            $this->wrap = true;
+            $this->reflow();
+        }
+    }
+
+    /** Back to one row per code line, a long one cut at the pane's edge. */
+    public function useOneRowPerLine(): void
+    {
+        if ($this->wrap) {
+            $this->wrap = false;
+            $this->reflow();
+        }
+    }
+
+    /** The same content in rows of another height: the caret stays on its thread, else on its line. */
+    private function reflow(): void
+    {
+        $row = $this->rows[$this->list->selected()] ?? null;
+        $this->rebuild(null, $row['thread']->id ?? null);
+        $anchor = $row['anchor'] ?? null;
+        $index =
+            null === $anchor || null !== ($row['thread'] ?? null)
+                ? null
+                : \array_find_key($this->rows, static fn (array $other): bool => $anchor->line === $other['anchor']?->line && $anchor->side === $other['anchor']->side);
+        if (\is_int($index)) {
+            $this->list->select($index);
+        }
+    }
+
     /** @param list<Comment> $comments */
     public function showConversation(string $title, array $comments): void
     {
@@ -326,7 +370,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     {
         // Never focused and with no cursor of its own: this pane's caret is
         // its row list, shaded over the band in render().
-        $renderer = new DiffViewRenderer($diff, $this->highlights->of($diff, $path), 0, -1, null, false, null, $this->styles, expandable: false);
+        $renderer = new DiffViewRenderer($diff, $this->highlights->of($diff, $path), 0, -1, null, false, null, $this->styles, expandable: false, wrap: $this->wrap);
         $rows = [];
         $placed = [];
         foreach ($diff->hunks as $h => $hunk) {
@@ -338,7 +382,10 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
                 $side = '-' === $line->origin ? Side::Old : Side::New;
                 $number = Side::Old === $side ? $line->oldNo : $line->newNo;
                 $anchor = null === $number ? null : new Anchor($path, $number, $side, $line->text);
-                $rows[] = ['text' => '', 'anchor' => $anchor, 'thread' => null, 'ansi' => $renderer->row(-1, ['kind' => DiffRowKind::Line, 'hunk' => $h, 'line' => $l], $width)];
+                $row = ['kind' => DiffRowKind::Line, 'hunk' => $h, 'line' => $l];
+                foreach ($renderer->segments(-1, $row, $width, DiffRowHeights::of($diff, [$row], $width, $this->wrap)->height(0)) as $ansi) {
+                    $rows[] = ['text' => '', 'anchor' => $anchor, 'thread' => null, 'ansi' => $ansi];
+                }
                 foreach ($threads as $thread) {
                     $onOld = Side::Old === $thread->anchor->side && '+' !== $line->origin && $thread->anchor->line === $line->oldNo;
                     $onNew = Side::New === $thread->anchor->side && '-' !== $line->origin && $thread->anchor->line === $line->newNo;
@@ -379,7 +426,10 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         $rows = [];
         foreach ($lines as $index => $code) {
             $number = $index + 1;
-            $rows[] = ['text' => self::number($number).Glyphs::DIFF_COLUMN.' '.MarkupParser::escape(self::untab($code)), 'anchor' => new Anchor($path, $number, Side::New, $code), 'thread' => null];
+            $anchor = new Anchor($path, $number, Side::New, $code);
+            foreach ($this->codeSegments(self::untab($code), $width) as $segment => $slice) {
+                $rows[] = ['text' => self::number(0 === $segment ? $number : null).Glyphs::DIFF_COLUMN.' '.MarkupParser::escape($slice), 'anchor' => $anchor, 'thread' => null];
+            }
             foreach ($byLine[$number] ?? [] as $thread) {
                 \array_push($rows, ...$this->threadRows($thread, $width));
             }
@@ -428,6 +478,27 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         $rows[] = ['text' => '', 'anchor' => null, 'thread' => $thread];
 
         return $rows;
+    }
+
+    /**
+     * A file's code line as the rows it takes after the number and the
+     * column: itself, or under soft wrap its column-exact slices.
+     *
+     * @return list<string>
+     */
+    private function codeSegments(string $code, int $width): array
+    {
+        $body = $width - self::CODE_INDENT;
+        $count = $this->wrap ? WrapLayout::rowsForWidth(AnsiUtils::visibleWidth($code), $body) : 1;
+        if (1 === $count) {
+            return [$code];
+        }
+        $slices = [];
+        for ($segment = 0; $segment < $count; ++$segment) {
+            $slices[] = AnsiText::columnsFrom($code, $segment * $body, $body);
+        }
+
+        return $slices;
     }
 
     /** A tab is four columns here: the pane paints text, not an editor's tab stops. */

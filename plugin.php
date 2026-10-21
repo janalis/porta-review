@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Porta\Event\GitRemoteCompleted;
+use Porta\Event\PluginObservable;
+use Porta\Event\SoftWrapChanged;
 use Porta\Event\WorkingTreeChanged;
 use Porta\GitPlugin\Process\GitProcessRunner;
 use Porta\GitPlugin\Process\ProcessLane;
@@ -123,7 +125,17 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
         });
         $api->onShutdown($this->deactivate(...));
 
-        $api->registerView(ReviewViewController::ID, static function (ViewServices $services) use ($api, $store, $git, $showResolved, &$view): ReviewViewController {
+        // The pane once the view is first opened: soft wrap reaches it live.
+        $content = null;
+        $api->on(SoftWrapChanged::class, static function (PluginObservable $event) use (&$content): void {
+            if ($event instanceof SoftWrapChanged && $event->on) {
+                $content?->useSoftWrap();
+
+                return;
+            }
+            $content?->useOneRowPerLine();
+        });
+        $api->registerView(ReviewViewController::ID, static function (ViewServices $services) use ($api, $store, $git, $showResolved, &$view, &$content): ReviewViewController {
             $width = 48;
             $list = new ReviewListWidget($services->translator, $width, $services->styles);
             $list->setId('review-threads');
@@ -131,6 +143,9 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
             $reply->setId('review-reply');
             $content = new ReviewContentWidget($services->translator, $services->styles, $services->density, $api->syntaxTheme());
             $content->setId('review-diff');
+            if ($api->softWrap()) {
+                $content->useSoftWrap();
+            }
 
             return $view = new ReviewViewController($services, $api, $store, $git, $list, $reply, $content, $showResolved);
         });

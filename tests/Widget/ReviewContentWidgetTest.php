@@ -241,6 +241,75 @@ final class ReviewContentWidgetTest extends TestCase
         $this->assertSame(['open src/A.php:2:old:$old = 1; -'], $this->acted, 'a re-render with no thread keeps the row');
     }
 
+    private static function longDiff(): DiffDocument
+    {
+        return DiffDocument::parse(\implode("\n", ['diff --git a/src/A.php b/src/A.php', '@@ -1,2 +1,2 @@', '-x', '+'.\str_repeat('n', times: 40), ' $keep;'])."\n");
+    }
+
+    /**
+     * Under soft wrap a long code line continues on the rows below, as the
+     * git view's diff does — and a key on any of its rows acts on the line.
+     */
+    public function testUnderSoftWrapALongLineContinuesAndEveryRowIsItsLine(): void
+    {
+        $widget = $this->widget();
+        $widget->useSoftWrap();
+        $widget->showFile('src/A.php', self::longDiff(), '', []);
+
+        $screen = $this->screen($widget, 8, 40);
+        $this->assertMatchesRegularExpression('/^\s+1 │\+n{28}$/', $screen[3], 'the addition\'s first row: 28 columns of text at 40');
+        $this->assertSame(\str_repeat(' ', times: 10).'│ '.\str_repeat('n', times: 12), $screen[4], 'its second, numbers blank');
+        $this->assertStringContainsString('$keep;', $screen[5]);
+
+        $widget->handleInput("\x1b[B");
+        $widget->handleInput("\x1b[B");
+        $widget->handleInput("\x1b[B"); // the continuation row
+        $widget->handleInput('c');
+        $this->assertSame(['comment src/A.php:1:new:'.\str_repeat('n', times: 40).' -'], $this->acted);
+    }
+
+    public function testUnderSoftWrapAFilesLongLineContinuesToo(): void
+    {
+        $widget = $this->widget();
+        $widget->useSoftWrap();
+        $widget->showFile('src/A.php', DiffDocument::parse(''), \str_repeat('x', times: 50)."\n\$y;", []);
+
+        $screen = $this->screen($widget, 5, 40);
+        $this->assertSame('   1 │ '.\str_repeat('x', times: 33), $screen[1]);
+        $this->assertSame('     │ '.\str_repeat('x', times: 17), $screen[2]);
+        $this->assertSame('   2 │ $y;', $screen[3]);
+    }
+
+    /** Wrap turned on or off under the caret: the rows change, the line it is on does not. */
+    public function testTurningWrapOnAndOffKeepsTheCaretsLine(): void
+    {
+        $widget = $this->widget();
+        $widget->showFile('src/A.php', self::longDiff(), '', []);
+        $this->screen($widget, 8, 40);
+        $widget->handleInput("\x1b[B");
+        $widget->handleInput("\x1b[B");
+        $widget->handleInput("\x1b[B"); // $keep, the row after the long one
+
+        $widget->useSoftWrap();
+        $widget->handleInput('o');
+        $widget->useOneRowPerLine();
+        $widget->handleInput('o');
+
+        $this->assertSame(['open src/A.php:2:new:$keep; -', 'open src/A.php:2:new:$keep; -'], $this->acted);
+        $this->assertCount(5, \array_filter($this->screen($widget, 8, 40), static fn (string $row): bool => '' !== \trim($row)), 'one row each again: the header, the hunk and three lines');
+    }
+
+    /** Wrap toggled with the caret in a thread: it stays in the thread. */
+    public function testTurningWrapOnKeepsTheCaretsThread(): void
+    {
+        $widget = $this->widget();
+        $widget->showFile('src/A.php', self::longDiff(), '', [self::thread('t', 2)], focus: 't');
+
+        $widget->useSoftWrap();
+
+        $this->assertSame('t', $widget->currentThread()?->id);
+    }
+
     public function testTabAndEscapeLeave(): void
     {
         $widget = $this->widget();

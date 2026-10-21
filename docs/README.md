@@ -68,7 +68,8 @@ the view answers the mouse — an entry, a row, the Send button.
   is no diff to show, it shows
   the file itself: a local review of a file with nothing uncommitted, or a
   forge review whose commits you have not fetched. The Conversation shows
-  here too.
+  here too. Under core's soft wrap (`Alt+Z`) a long code line continues on
+  the rows below, and a key on any of them acts on that line.
 
 | Key | In the list | In the file pane |
 | --- | --- | --- |

@@ -6,6 +6,7 @@ namespace Porta\ReviewPlugin\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Porta\Config\CommandRegistry;
+use Porta\Config\ConfigScope;
 use Porta\Editor\BufferService;
 use Porta\Editor\OpenFocus;
 use Porta\Ide;
@@ -17,6 +18,7 @@ use Porta\ReviewPlugin\View\ReviewMouseRouter;
 use Porta\ReviewPlugin\Widget\ReplyBoxWidget;
 use Porta\ReviewPlugin\Widget\ReviewContentWidget;
 use Porta\ReviewPlugin\Widget\ReviewListWidget;
+use Porta\Settings\SettingsScope;
 use Porta\Tests\Support\ClearsPortaLsp;
 use Porta\Tests\Support\Paint;
 use Porta\Tests\Support\PreservesPath;
@@ -116,6 +118,36 @@ final class LocalReviewE2eTest extends TestCase
         );
 
         $this->addToAssertionCount(1);
+    }
+
+    /** The review pane follows core's soft wrap: built wrapped when it is on, and live after. */
+    public function testThePaneFollowsTheSoftWrapSetting(): void
+    {
+        \putenv('PATH=/nonexistent');
+        $project = self::project();
+        \file_put_contents($project->path('.porta.json'), data: '{"enabledPlugins":["diff","git","review"],"plugins":{"review":{"provider":"local"}},"settings":{"softWrap":true}}');
+
+        $this->runIde(
+            $project,
+            $project->path('src/A.php'),
+            [
+                200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
+                    // Into the project, never the committed fixture home.
+                    Services::resolve($ide, SettingsScope::class)->set(ConfigScope::Project);
+                    $commands = Services::resolve($ide, CommandRegistry::class);
+                    $commands->run('review:open');
+                    $this->awaitPainted($tui, $terminal, 'Tidy the loop');
+                    $content = $tui->getById('review-diff');
+                    $this->assertInstanceOf(ReviewContentWidget::class, $content);
+                    $this->assertTrue(Probe::get($content, 'wrap'), 'built wrapped: the setting was on when the view opened');
+
+                    $commands->run('toggle_soft_wrap');
+                    $this->assertFalse(Probe::get($content, 'wrap'), 'Alt+Z unwraps it with the editor');
+                    $commands->run('toggle_soft_wrap');
+                    $this->assertTrue(Probe::get($content, 'wrap'));
+                },
+            ],
+        );
     }
 
     public function testCommentOnThisLineStartsAThreadWithTheLinesText(): void
