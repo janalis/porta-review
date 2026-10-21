@@ -23,7 +23,43 @@
             ],
             "commands": {
                 "review": "Porta\\ReviewPlugin\\Console\\ReviewCommand"
-            }
+            },
+            "tools": [
+                {
+                    "name": "git",
+                    "purpose": "reads the branch under review",
+                    "sources": [
+                        [
+                            "brew",
+                            "git"
+                        ]
+                    ]
+                },
+                {
+                    "name": "gh",
+                    "role": "suggested",
+                    "purpose": "GitHub pull requests",
+                    "setting": "ghBinary",
+                    "sources": [
+                        [
+                            "brew",
+                            "gh"
+                        ]
+                    ]
+                },
+                {
+                    "name": "glab",
+                    "role": "suggested",
+                    "purpose": "GitLab merge requests",
+                    "setting": "glabBinary",
+                    "sources": [
+                        [
+                            "brew",
+                            "glab"
+                        ]
+                    ]
+                }
+            ]
         }
     }
 }
