@@ -475,7 +475,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
             'thread' => $thread,
         ]];
         foreach (\explode("\n", \rtrim($comment->body)) as $paragraph) {
-            foreach (AnsiText::wrap($paragraph, \max(10, $width - $indentWidth)) as $wrapped) {
+            foreach (AnsiText::wrapProse($paragraph, \max(10, $width - $indentWidth)) as $wrapped) {
                 $rows[] = ['text' => $indent.MarkupParser::escape($wrapped), 'anchor' => null, 'thread' => $thread];
             }
         }

@@ -221,6 +221,15 @@ final class ReviewContentWidgetTest extends TestCase
         $this->assertSame([], $this->acted, 'nothing to act on');
     }
 
+    /** A link longer than the pane breaks after a slash, never mid-word. */
+    public function testALinkInACommentWrapsAtItsSlashes(): void
+    {
+        $widget = $this->widget();
+        $widget->showConversation('PR #12', [new Comment('carol', 'See https://github.com/acme/porta/pull/12/files#diff-a1b2', '2026-09-28T11:00:00Z')]);
+
+        $this->assertSame(['See', 'https://github.com/acme/porta/pull/12/', 'files#diff-a1b2'], \array_map(trim(...), \array_slice($this->screen($widget, 8, 40), offset: 2, length: 3)));
+    }
+
     public function testARenderAtAnotherWidthRewrapsAndKeepsTheCaretsThread(): void
     {
         $widget = $this->widget();
