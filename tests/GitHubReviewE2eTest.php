@@ -216,8 +216,6 @@ final class GitHubReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     public function testRepliesResolvesCommentsAndTheConversationGoToGitHub(): void
@@ -293,8 +291,6 @@ final class GitHubReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /**
@@ -344,8 +340,6 @@ final class GitHubReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     public function testTheInlineModeShowsTheWholeThreadUnderItsLine(): void
@@ -366,8 +360,6 @@ final class GitHubReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /**
@@ -398,8 +390,6 @@ final class GitHubReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /** The same for the view: a file that loads after the conversation was picked does not replace it. */
@@ -427,7 +417,5 @@ final class GitHubReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 }

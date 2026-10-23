@@ -116,8 +116,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /** The review pane follows core's soft wrap: built wrapped when it is on, and live after. */
@@ -183,8 +181,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     public function testTheConversationEntryHasNoThreadToActOnAndTheAgentCanTakeThingsAway(): void
@@ -250,8 +246,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     public function testChoosingAReviewAndFilesOutsideTheProject(): void
@@ -291,8 +285,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /** A settings edit acts at once: the display repaints, the poll re-arms, anything else re-reads the review. */
@@ -327,8 +319,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /**
@@ -365,8 +355,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /**
@@ -402,8 +390,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /** The view's left column resizes as one: a drag on the separator widens the list and the reply box alike. */
@@ -442,8 +428,6 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 
     /**
@@ -529,7 +513,5 @@ final class LocalReviewE2eTest extends TestCase
                 },
             ],
         );
-
-        $this->addToAssertionCount(1);
     }
 }
