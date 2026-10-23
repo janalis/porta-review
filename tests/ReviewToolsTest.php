@@ -41,7 +41,7 @@ final class ReviewToolsTest extends TestCase
         $source = $this->source;
         $this->store = new ReviewStore(static fn (\Closure $onDone) => $onDone($source));
         $settings = new PluginSettings('/p', []);
-        $this->api = new PluginApi('review', new PluginManager(new EventDispatcher(), $settings), '/p', $settings);
+        $this->api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
         new ReviewTools($this->api, $this->store)->register();
     }
 
@@ -116,7 +116,7 @@ final class ReviewToolsTest extends TestCase
         $empty = new ReviewStore(static fn (\Closure $onDone) => $onDone(null));
         $empty->refresh();
         $settings = new PluginSettings('/p', []);
-        $this->api = new PluginApi('review', new PluginManager(new EventDispatcher(), $settings), '/p', $settings);
+        $this->api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
         new ReviewTools($this->api, $empty)->register();
         $this->refused('threads', [], 'This branch has no review');
         $this->refused('comment', ['path' => 'a', 'line' => 1, 'body' => 'x'], 'This branch has no review');
@@ -153,7 +153,7 @@ final class ReviewToolsTest extends TestCase
     {
         $this->store->refresh(); // and never answered
         $settings = new PluginSettings('/p', []);
-        $api = new PluginApi('review', new PluginManager(new EventDispatcher(), $settings), '/p', $settings);
+        $api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
         new ReviewTools($api, $this->store, loadTimeout: 0.05)->register();
 
         try {
@@ -232,7 +232,7 @@ final class ReviewToolsTest extends TestCase
         $store = new ReviewStore(static fn (\Closure $onDone) => $onDone($slow));
         $store->refresh();
         $settings = new PluginSettings('/p', []);
-        $api = new PluginApi('review', new PluginManager(new EventDispatcher(), $settings), '/p', $settings);
+        $api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
         new ReviewTools($api, $store)->register();
         EventLoop::delay(0.02, static function () use ($slow): void {
             $slow->waiting[0](null);
