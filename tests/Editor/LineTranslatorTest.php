@@ -64,4 +64,18 @@ final class LineTranslatorTest extends TestCase
         $this->assertNull(LineTranslator::byText($lines, 3, 'gone'));
         $this->assertNull(LineTranslator::byText(\array_fill(start_index: 0, count: 500, value: 'x'), line: 1, text: 'y'), 'nor searches forever');
     }
+
+    public function testTheTextIsFoundOnTheFilesEdgesAndAtTheEdgeOfReach(): void
+    {
+        $this->assertSame(2, LineTranslator::byText(['t', 't', 't'], 2, 't'), 'the line itself before either neighbour');
+        $this->assertSame(1, LineTranslator::byText(['t', 'x', 't'], 2, 't'), 'the earlier of two equally near');
+        $this->assertSame(1, LineTranslator::byText(['target', 'x', 'x'], 3, 'target'), 'the first line');
+        $this->assertSame(3, LineTranslator::byText(['x', 'x', 'target'], 1, 'target'), 'the last line');
+
+        $far = \array_fill(start_index: 0, count: 300, value: 'x');
+        $far[200] = 'target';
+        $this->assertSame(201, LineTranslator::byText($far, 1, 'target'), 'two hundred lines away is still in reach');
+        $this->assertNull(LineTranslator::byText($far, 1, 'x-not-there'));
+        $this->assertNull(LineTranslator::byText(\array_replace($far, [200 => 'x', 201 => 'target']), 1, 'target'), 'two hundred and one is not');
+    }
 }

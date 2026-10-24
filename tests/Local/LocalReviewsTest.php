@@ -132,6 +132,37 @@ final class LocalReviewsTest extends TestCase
         $this->assertCount(3, $review->threads ?? []);
     }
 
+    public function testABrokenThreadHidesNoneAfterIt(): void
+    {
+        $reviews = $this->reviews([
+            '.porta/reviews/agent/t1/thread.json' => '{"path":"","line":3}',
+            '.porta/reviews/agent/t1/2026T01--claude.md' => 'no path',
+            '.porta/reviews/agent/t2/thread.json' => '{"path":"a","line":3}',
+            '.porta/reviews/agent/t2/2026T01--claude.md' => 'fine',
+        ]);
+
+        $this->assertSame(['t2'], \array_map(static fn ($t): string => $t->id, $reviews->read('agent')->threads ?? []));
+    }
+
+    public function testWrittenMetaKeepsWhatElseItSaidAndReadsLikeAHandWrittenFile(): void
+    {
+        $reviews = $this->reviews(['.porta/reviews/agent/review.json' => '{"base":"main"}']);
+
+        $this->assertTrue($reviews->describe('agent', 'Tidy ü/ä'));
+        $this->assertSame("{\n    \"base\": \"main\",\n    \"title\": \"Tidy ü/ä\"\n}\n", \file_get_contents($this->project->path('.porta/reviews/agent/review.json')));
+
+        $thread = $reviews->open('agent', new Anchor('src/ü.php', 2, Side::New), 'x', 'y');
+        $this->assertSame("{\n    \"path\": \"src/ü.php\",\n    \"line\": 2,\n    \"side\": \"new\"\n}\n", \file_get_contents($this->project->path(".porta/reviews/agent/{$thread}/thread.json")));
+    }
+
+    public function testATitleThatCannotBeEncodedFailsLikeAWrite(): void
+    {
+        $reviews = $this->reviews();
+
+        $this->assertFalse($reviews->describe('agent', "bad \xC3"));
+        $this->assertNull($reviews->open('agent', new Anchor("bad \xC3", 1), 'x', 'y'));
+    }
+
     public function testAFailedWriteSaysSo(): void
     {
         $reviews = $this->reviews(['.porta/reviews/agent/t1/thread.json' => '{"path":"a","line":1}']);
@@ -163,6 +194,32 @@ final class LocalReviewsTest extends TestCase
         $this->assertSame($before, $reviews->fingerprint(), 'stable while nothing changes');
         $reviews->append('agent', 't1', 'x', 'y');
         $this->assertNotSame($before, $reviews->fingerprint());
+    }
+
+    public function testTheFingerprintSeesASizeAnMtimeAndANameChangeAlone(): void
+    {
+        $reviews = $this->reviews(['.porta/reviews/agent/t1/1--a.md' => 'abc']);
+        $file = $this->project->path('.porta/reviews/agent/t1/1--a.md');
+        \touch($file, mtime: 1_700_000_000);
+        $before = $reviews->fingerprint();
+
+        \file_put_contents($file, data: 'abcd');
+        \touch($file, mtime: 1_700_000_000);
+        \clearstatcache();
+        $this->assertNotSame($before, $grown = $reviews->fingerprint(), 'longer, same mtime');
+
+        \touch($file, mtime: 1_700_000_001);
+        \clearstatcache();
+        $this->assertNotSame($grown, $touched = $reviews->fingerprint(), 'same size, newer');
+
+        // The directory's own mtime moves with a rename: put it back, so only the name differs.
+        $dir = $this->project->path('.porta/reviews/agent/t1');
+        \clearstatcache();
+        $dirMtime = (int) \filemtime($dir);
+        \rename($file, $dir.'/1--b.md');
+        \touch($dir, $dirMtime);
+        \clearstatcache();
+        $this->assertNotSame($touched, $reviews->fingerprint(), 'same size and mtime, another name');
     }
 
     public function testTheDefaultClockSortsToTheMicrosecond(): void

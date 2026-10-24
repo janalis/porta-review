@@ -58,8 +58,9 @@ final class ReviewToolsTest extends TestCase
             '42',
             'Cart totals',
             [
-                new Thread('open', new Anchor('src/Cart.php', 9), [new Comment('alice', 'Use array_sum.', '2026-09-28T10:00:00Z'), new Comment('bob', 'Done.')]),
+                // Resolved FIRST: leaving it out must not end the list.
                 new Thread('closed', new Anchor('src/Cart.php', 20), [new Comment('alice', 'Typo.')], resolved: true, outdated: true),
+                new Thread('open', new Anchor('src/Cart.php', 9), [new Comment('alice', 'Use array_sum.', '2026-09-28T10:00:00Z'), new Comment('bob', 'Done.')]),
             ],
             [new Comment('carol', 'Overall fine.')],
             url: 'https://example.test/pull/42',
@@ -104,8 +105,8 @@ final class ReviewToolsTest extends TestCase
 
         $all = $this->callTool($this->api, 'threads', ['includeResolved' => true]);
         $this->assertIsArray($all);
-        $this->assertSame(['open', 'closed'], \array_column($all['threads'], 'id'));
-        $this->assertTrue($all['threads'][1]['outdated']);
+        $this->assertSame(['closed', 'open'], \array_column($all['threads'], 'id'));
+        $this->assertTrue($all['threads'][0]['outdated']);
     }
 
     public function testWithoutAReviewItSaysWhy(): void

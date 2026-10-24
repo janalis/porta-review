@@ -210,7 +210,10 @@ final class LocalReviewE2eTest extends TestCase
                     $this->assertTrue($view?->isOpen());
                     $view?->open(); // already open: nothing to do
 
-                    // The focus ring, both ways round.
+                    // The focus ring, both ways round — and into it from outside, at its start.
+                    $tui->setFocus(Widgets::editor($tui));
+                    $this->assertTrue($view?->cycleFocus(1));
+                    $this->assertSame($tui->getById('review-threads'), $tui->getFocus());
                     $this->assertTrue($view?->cycleFocus(1));
                     $this->assertSame($tui->getById('review-reply'), $tui->getFocus());
                     $view?->cycleFocus(-1);
@@ -219,6 +222,7 @@ final class LocalReviewE2eTest extends TestCase
 
                     Services::resolve($ide, CommandRegistry::class)->run('review:copy_link');
                     $this->awaitToast($ide, 'This review has no link');
+                    $this->assertSame('This review has no link', Toasts::last($ide), 'and nothing after it: no copy of no link');
                 },
                 300 => function (Tui $tui, VirtualTerminal $terminal) use ($project): void {
                     // Aim the box at a thread, then the agent deletes that thread: the box lets go.
@@ -234,6 +238,7 @@ final class LocalReviewE2eTest extends TestCase
                     // The whole review goes: the pane empties, and there is nothing to comment on.
                     new Filesystem()->remove($project->path('.porta/reviews'));
                     $this->awaitPainted($tui, $terminal, 'No review for this branch');
+                    $this->assertSame([], Probe::get(Widgets::byId($tui, 'review-diff', ReviewContentWidget::class), 'rows'), 'the pane let go of the file it showed');
                     $tui->setFocus($tui->getById('review-threads'));
                     $tui->handleInput('c');
                     $this->assertSame('', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->targetLabel(), 'no review to write to');
@@ -243,6 +248,8 @@ final class LocalReviewE2eTest extends TestCase
                     $view?->close(); // already closed
                     Services::resolve($ide, CommandRegistry::class)->run('review:comment_line');
                     $this->awaitToast($ide, 'No review for this branch');
+                    $this->assertSame('No review for this branch', Toasts::last($ide), 'and nothing after it: no file loaded for no review');
+                    $this->assertSame('', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->targetLabel(), 'nor a comment aimed at it');
                 },
             ],
         );
@@ -254,6 +261,11 @@ final class LocalReviewE2eTest extends TestCase
         $project = self::project();
         $project->write('.porta/reviews/other/t9/thread.json', '{"path":"src/A.php","line":1}');
         $project->write('.porta/reviews/other/t9/1--bot.md', 'Header?');
+        $project->write('.porta/reviews/other/t8/thread.json', '{"path":"src/A.php","line":1,"lineText":"foreach ($items as $item) {"}');
+        $project->write('.porta/reviews/other/t8/1--bot.md', 'Loop?');
+        foreach (['t8/1--bot.md', 't8/thread.json', 't8'] as $name) {
+            \touch($project->path('.porta/reviews/other/'.$name), \time() - 1000);
+        }
         \touch($project->path('.porta/reviews/other/t9/1--bot.md'), \time() - 1000);
         \touch($project->path('.porta/reviews/other/t9'), \time() - 1000);
         \touch($project->path('.porta/reviews/other/t9/thread.json'), \time() - 1000);
@@ -272,7 +284,7 @@ final class LocalReviewE2eTest extends TestCase
                     $tui->handleInput("\x1b[B");
                     $tui->handleInput("\x1b[B");
                     $tui->handleInput("\r");
-                    $this->await(static fn (): bool => [0 => 'bot: Header?'] === $marks(), what: 'the one picked');
+                    $this->await(static fn (): bool => [0 => 'bot: Header?', 2 => 'bot: Loop?'] === $marks(), what: 'the one picked, each thread on its line — t8 found by its text');
                 },
                 300 => function (Tui $tui, $terminal, Ide $ide) use ($outside, $project): void {
                     // A file outside the project: no review is about it, and there is no line to comment on.
@@ -280,6 +292,7 @@ final class LocalReviewE2eTest extends TestCase
                     $this->await(static fn (): bool => [] === Widgets::editor($tui)->decorations->commentMarks, what: 'the other file, unmarked');
                     Services::resolve($ide, CommandRegistry::class)->run('review:comment_line');
                     $this->awaitToast($ide, 'Open a project file to comment on');
+                    $this->assertSame('Open a project file to comment on', Toasts::last($ide), 'and nothing after it: no thread on no line');
                     Services::resolve($ide, BufferService::class)->openFile($project->path('src/A.php'), OpenFocus::Editor);
                     $this->await(static fn (): bool => [] !== Widgets::editor($tui)->decorations->commentMarks, what: 'back, marked again');
                 },
@@ -465,9 +478,13 @@ final class LocalReviewE2eTest extends TestCase
                     $click($at->row + 1, $at->col + 3); // the list's title: no entry, nothing happens
                     $click($at->row + 4, $at->col + 3); // the file heading: none either
                     $this->assertSame('', $list->selectedId());
+                    $content = Widgets::byId($tui, 'review-diff', ReviewContentWidget::class);
+                    $tui->setFocus($content);
                     $click($at->row + 5, $at->col + 3);
-                    $this->awaitPainted($tui, $terminal, '$total += $item;');
+                    // The pane's own thread, not the text: the editor behind the view shows that line too.
+                    $this->await(static fn (): bool => 't1' === $content->currentThread()?->id, what: 'the clicked thread on the pane');
                     $this->assertSame('t1', $list->selectedId());
+                    $this->assertSame($list, $tui->getFocus(), 'a click focuses the pane it lands on');
 
                     $reply = Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class);
                     $tui->handleInput('r');
@@ -478,11 +495,12 @@ final class LocalReviewE2eTest extends TestCase
                     $tui->handleInput(\sprintf("\x1b[<35;%d;%dM", $box->col + 5, $box->row + $reply->buttonRow() + 1)); // the pointer on the button
                     $this->frame($tui);
                     $this->assertSame($reply->buttonRow(), Probe::get($reply, 'hoveredIndex'), 'a ready button tints under the pointer');
+                    $tui->setFocus($list);
                     $click($box->row + $reply->buttonRow() + 1, $box->col + 5); // its first row, boxed or compact
+                    $this->assertSame($reply, $tui->getFocus());
                     $this->await(static fn (): bool => 2 === \count((array) \glob($project->path('.porta/reviews/agent/t1/*.md'))), what: 'the click to send');
 
                     // The toolbar toggle on the pane's header.
-                    $content = Widgets::byId($tui, 'review-diff', ReviewContentWidget::class);
                     $pane = $renderer->getWidgetRect($content);
                     \assert(null !== $pane, description: 'the pane was painted');
                     $window = Services::resolve($ide, ViewWindowPresenter::class)->box();
@@ -497,6 +515,7 @@ final class LocalReviewE2eTest extends TestCase
                     $tui->handleInput(\sprintf("\x1b[<35;%d;%dM", $pane->col + $col + 2, $pane->row + $row + 1));
                     $click($pane->row + $row + 1, $pane->col + $col + 2);
                     $this->frame($tui);
+                    $this->assertSame($content, $tui->getFocus());
                     $this->assertTrue($list->selectId('t0'), 'shown now');
                     $this->assertTrue(
                         (bool) \json_decode((string) \file_get_contents($project->path('.porta.json')), associative: true, flags: \JSON_THROW_ON_ERROR)['plugins']['review']['showResolved'],
@@ -507,6 +526,9 @@ final class LocalReviewE2eTest extends TestCase
                     $tui->handleInput('s');
                     $this->frame($tui);
                     $this->assertFalse($list->selectId('t0'), '`s` hides them again');
+                    $this->assertTrue($list->selectId('t1'));
+                    $click($at->row + 3, $at->col + 3); // the first entry, right under the header: the conversation
+                    $this->assertSame('', $list->selectedId());
 
                     $click(row: 40, col: 200); // off every pane of the view's: the pointer passes it on
                     $tui->handleInput(\sprintf("\x1b[<64;%d;%dM", $at->col + 3, $at->row + 5)); // a wheel notch: the panes scroll by key, it falls through

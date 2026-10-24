@@ -300,6 +300,7 @@ final class ReviewContentWidgetTest extends TestCase
         $widget->handleInput("\x1b[B"); // $keep, the row after the long one
 
         $widget->useSoftWrap();
+        $this->assertGreaterThan(5, \count(\array_filter($this->screen($widget, 8, 40), static fn (string $row): bool => '' !== \trim($row))), 'the long line on rows of its own at once');
         $widget->handleInput('o');
         $widget->useOneRowPerLine();
         $widget->handleInput('o');
@@ -404,5 +405,38 @@ final class ReviewContentWidgetTest extends TestCase
         $widget->setFocused(true);
         $widget->handleInput('o');
         $this->assertSame(['open src/A.php:1'], $this->acted);
+    }
+
+    public function testAFilesTabIsFourColumns(): void
+    {
+        $widget = $this->widget();
+        $widget->showFile('src/A.php', DiffDocument::parse(''), "\tx;", []);
+
+        $this->assertSame('   1 │     x;', $this->screen($widget)[1]);
+    }
+
+    public function testAMarkerInsideAHunkEndsNothing(): void
+    {
+        $widget = $this->widget();
+        $widget->showFile('src/A.php', DiffDocument::parse("@@ -1 +1 @@\n-old\n\\ No newline at end of file\n+new\n"), '', []);
+
+        $this->assertStringContainsString('new', \implode("\n", $this->screen($widget)), 'the addition after the old side\'s marker');
+    }
+
+    public function testAClickPicksTheRowUnderItAndBelowTheLastTheLast(): void
+    {
+        $widget = $this->widget();
+        $widget->showFile('src/A.php', self::diff(), '', []);
+        $screen = $this->screen($widget);
+        // The hunk's row, the first one under the header.
+        $first = (int) \array_key_first(\array_filter($screen, static fn (string $row): bool => \str_contains($row, '@@ -1,4')));
+
+        $widget->handleClick(29, 0);
+        $widget->handleInput('o');
+        $widget->handleClick($first, 0);
+        $widget->handleInput("\x1b[B"); // from the hunk's row down to its first line
+        $widget->handleInput('o');
+
+        $this->assertSame(['open src/A.php:3:new:$keep; -', 'open src/A.php:1:new:<?php -'], $this->acted);
     }
 }

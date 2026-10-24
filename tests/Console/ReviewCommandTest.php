@@ -71,12 +71,40 @@ final class ReviewCommandTest extends TestCase
         $this->assertStringContainsString('  review: claude: Overall fine', $text);
     }
 
+    public function testListShowsTheNamedReviewWholeAsPrettyJsonAndAsIndentedText(): void
+    {
+        $this->exec(['action' => 'add', 'words' => ['src/Cart.php:2', '-'], '--review' => 'older', '--author' => 'claude', '--title' => 'Panier ü/2'], "  First line\nsecond line  \n");
+        $older = $this->project->path('.porta/reviews/older');
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($older, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST) as $file) {
+            \touch((string) $file, mtime: 1_700_000_000);
+        }
+        \touch($older, mtime: 1_700_000_000);
+        $this->exec(['action' => 'comment', 'words' => ['newer'], '--review' => 'other', '--author' => 'other']);
+        $this->assertSame('other', $this->reviews()->ids()[0], 'another review is the newest now');
+
+        $display = $this->exec(['action' => 'list', '--json' => true, '--review' => 'older'])->getDisplay();
+        $this->assertStringContainsString('    "title": "Panier ü/2",', $display, 'pretty, its slashes and its letters as written');
+        $json = \json_decode($display, associative: true, flags: \JSON_THROW_ON_ERROR);
+        $this->assertIsArray($json);
+        $thread = $json['threads'][0] ?? [];
+        $this->assertSame(['older', 'Panier ü/2'], [$json['id'], $json['title']], 'the named review, not the newest');
+        $this->assertSame(['id', 'path', 'line', 'side', 'resolved', 'comments'], \array_keys($thread));
+        $this->assertSame(['src/Cart.php', 2, 'new', false], [$thread['path'], $thread['line'], $thread['side'], $thread['resolved']]);
+        $this->assertSame(['author', 'body', 'at'], \array_keys($thread['comments'][0]));
+        $this->assertSame(['claude', "First line\nsecond line"], [$thread['comments'][0]['author'], $thread['comments'][0]['body']], 'the message trimmed');
+        $this->assertSame([], $json['conversation']);
+
+        $text = $this->exec(['action' => 'list', '--review' => 'older'])->getDisplay();
+        $this->assertStringContainsString("    claude: First line\n      second line\n", $text, 'a body\'s later lines indented under its first');
+    }
+
     public function testEveryMistakeSaysWhatWasWrongAndFails(): void
     {
         $cases = [
             [['action' => 'list', '--review' => 'none'], 'No review "none"'],
             [['action' => 'add', 'words' => ['src/Cart.php'], '--author' => 'a'], 'add takes FILE:LINE first, a 1-based line — "src/Cart.php" is not one'],
             [['action' => 'add', 'words' => ['src/Cart.php:0', 'x'], '--author' => 'a'], 'add takes FILE:LINE first, a 1-based line — "src/Cart.php:0" is not one'],
+            [['action' => 'add', 'words' => ['src/Cart.php:2x', 'x'], '--author' => 'a'], 'add takes FILE:LINE first, a 1-based line — "src/Cart.php:2x" is not one'],
             [['action' => 'add', 'words' => ['src/Cart.php:2'], '--author' => 'a'], 'add needs a message'],
             [['action' => 'add', 'words' => ['src/Cart.php:2', 'x'], '--review' => '../escape'], 'Could not write the thread'],
             [['action' => 'reply', 'words' => ['../../etc', 'x'], '--review' => 'a'], 'No thread "../../etc" in review "a"'],

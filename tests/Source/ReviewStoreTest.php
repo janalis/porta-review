@@ -120,10 +120,14 @@ final class ReviewStoreTest extends TestCase
     {
         $store = $this->store();
         $errors = [];
-        $store->act(static fn (): null => null, static function (?string $e) use (&$errors): void {
+        $ran = false;
+        $store->act(static function () use (&$ran): void {
+            $ran = true;
+        }, static function (?string $e) use (&$errors): void {
             $errors[] = $e;
         });
         $this->assertSame(['No review is loaded'], $errors);
+        $this->assertFalse($ran, 'no verb runs against no review');
 
         $store->refresh();
         \array_shift($this->resolving)($this->source);
