@@ -143,7 +143,7 @@ final readonly class LocalReviews
         $meta = $this->json($path)->array() ?? [];
         $meta['title'] = $title;
 
-        return $this->write($path, \json_encode($meta, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)."\n");
+        return $this->writeJson($path, $meta);
     }
 
     /** Add a comment to a thread (or the conversation); false when the thread does not exist. */
@@ -169,7 +169,7 @@ final readonly class LocalReviews
         if (null !== $anchor->lineText) {
             $meta['lineText'] = $anchor->lineText;
         }
-        $written = $this->write($dir.'/'.self::THREAD_FILE, \json_encode($meta, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE)."\n");
+        $written = $this->writeJson($dir.'/'.self::THREAD_FILE, $meta);
 
         return $written && $this->append($id, $thread, $author, $body) ? $thread : null;
     }
@@ -237,6 +237,24 @@ final readonly class LocalReviews
      * creating the directories on the way, so a reader polling the directory never
      * sees half a comment.
      */
+    /**
+     * $meta as a file an agent reads back: pretty, unescaped, newline-ended.
+     * False, like a failed write, when $meta cannot be encoded (a title of
+     * invalid UTF-8) — never a throw out of the poll.
+     *
+     * @param array<array-key, mixed> $meta
+     */
+    private function writeJson(string $path, array $meta): bool
+    {
+        try {
+            $json = \json_encode($meta, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+        } catch (\JsonException) {
+            return false;
+        }
+
+        return $this->write($path, $json."\n");
+    }
+
     private function write(string $path, string $contents): bool
     {
         try {
