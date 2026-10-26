@@ -233,11 +233,6 @@ final readonly class LocalReviews
     }
 
     /**
-     * Write through a temporary sibling and a rename ({@see Filesystem::dumpFile()}),
-     * creating the directories on the way, so a reader polling the directory never
-     * sees half a comment.
-     */
-    /**
      * $meta as a file an agent reads back: pretty, unescaped, newline-ended.
      * False, like a failed write, when $meta cannot be encoded (a title of
      * invalid UTF-8) — never a throw out of the poll.
@@ -255,6 +250,11 @@ final readonly class LocalReviews
         return $this->write($path, $json."\n");
     }
 
+    /**
+     * Write through a temporary sibling and a rename ({@see Filesystem::dumpFile()}),
+     * creating the directories on the way, so a reader polling the directory never
+     * sees half a comment.
+     */
     private function write(string $path, string $contents): bool
     {
         try {
