@@ -315,9 +315,12 @@ final class LocalReviewE2eTest extends TestCase
                     $this->await(static fn (): bool => [] !== $decorations->commentMarks, what: 'the review loaded');
                     $lifecycle = Services::resolve($ide, PluginLifecycle::class);
 
+                    // A thread lands on disk meanwhile: a display edit repaints what was read, it reads nothing.
+                    $project->write('.porta/reviews/agent/t8/thread.json', '{"path":"src/A.php","line":2}');
+                    $project->write('.porta/reviews/agent/t8/1--claude.md', 'Unread?');
                     $decorations->setCommentMarks([]);
                     $lifecycle->onPluginSettingChanged('review', 'editorDisplay', 'gutter');
-                    $this->assertSame([3 => 'claude: Use array_sum here.'], $decorations->commentMarks, 'republished at once');
+                    $this->assertSame([3 => 'claude: Use array_sum here.'], $decorations->commentMarks, 'republished at once, and only that');
 
                     $lifecycle->onPluginSettingChanged('review', 'refreshSeconds', 0);
 
@@ -326,9 +329,12 @@ final class LocalReviewE2eTest extends TestCase
                     $lifecycle->onPluginSettingChanged('review', 'provider', 'local'); // where reviews come from: re-read
                     $this->await(static fn (): bool => \array_key_exists(0, $decorations->commentMarks), what: 'the re-read');
 
+                    $project->write('.porta/reviews/agent/t7/thread.json', '{"path":"src/A.php","line":3}');
+                    $project->write('.porta/reviews/agent/t7/1--claude.md', 'Unread too?');
                     $decorations->setCommentMarks([]);
                     $lifecycle->onPluginSettingChanged('review', 'showResolved', true); // what is shown: repainted, not re-read
                     $this->assertArrayHasKey(0, $decorations->commentMarks, 'republished at once');
+                    $this->assertArrayNotHasKey(2, $decorations->commentMarks, 'not re-read');
                 },
             ],
         );
