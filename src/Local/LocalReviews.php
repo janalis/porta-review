@@ -189,13 +189,16 @@ final readonly class LocalReviews
     /** Remove a thread's resolved $marker; false when it cannot be. */
     private function unmark(string $marker): bool
     {
+        $removed = !Files::throughLink($this->root, $marker);
         try {
-            $this->files->remove($marker);
+            if ($removed) {
+                $this->files->remove($marker);
+            }
         } catch (IOException) {
-            return false;
+            $removed = false;
         }
 
-        return true;
+        return $removed;
     }
 
     /** @return list<Comment> */
@@ -253,17 +256,21 @@ final readonly class LocalReviews
     /**
      * Write through a temporary sibling and a rename ({@see Filesystem::dumpFile()}),
      * creating the directories on the way, so a reader polling the directory never
-     * sees half a comment.
+     * sees half a comment. Never through a link: `.porta/` comes with a clone
+     * ({@see Files::throughLink()}).
      */
     private function write(string $path, string $contents): bool
     {
+        $written = !Files::throughLink($this->root, $path);
         try {
-            $this->files->dumpFile($path, $contents);
+            if ($written) {
+                $this->files->dumpFile($path, $contents);
+            }
         } catch (IOException) {
-            return false;
+            $written = false;
         }
 
-        return true;
+        return $written;
     }
 
     /**

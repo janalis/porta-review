@@ -132,6 +132,19 @@ final class LocalReviewsTest extends TestCase
         $this->assertCount(3, $review->threads ?? []);
     }
 
+    /** `.porta/` comes with a clone: a thread that is a link is neither written nor unmarked through. */
+    public function testAThreadThatIsALinkIsNotWrittenThrough(): void
+    {
+        $elsewhere = new TempProject(['resolved' => '']);
+        $reviews = $this->reviews(['.porta/reviews/agent/.keep' => '']);
+        \symlink($elsewhere->dir, $this->project->path('.porta/reviews/agent/t1'));
+
+        $this->assertFalse($reviews->append('agent', 't1', 'Pierre', 'Hi'));
+        $this->assertFalse($reviews->resolve('agent', 't1', true));
+        $this->assertFalse($reviews->resolve('agent', 't1', false));
+        $this->assertSame(['resolved'], \array_values(\array_diff((array) \scandir($elsewhere->dir), ['.', '..'])));
+    }
+
     public function testABrokenThreadHidesNoneAfterIt(): void
     {
         $reviews = $this->reviews([
