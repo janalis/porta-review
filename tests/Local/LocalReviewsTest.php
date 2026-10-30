@@ -145,6 +145,22 @@ final class LocalReviewsTest extends TestCase
         $this->assertSame(['resolved'], \array_values(\array_diff((array) \scandir($elsewhere->dir), ['.', '..'])));
     }
 
+    /** Nor read through one: a comment that is a link to a file outside, or a folder linked back up, is not there. */
+    public function testWhatIsALinkIsNotReadAsAReview(): void
+    {
+        $elsewhere = new TempProject(['notes' => 'not the project\'s']);
+        $reviews = $this->reviews(['.porta/reviews/agent/t1/thread.json' => '{"path":"a","line":1}', '.porta/reviews/agent/t1/2026T00--claude.md' => 'first']);
+        \symlink($elsewhere->path('notes'), $this->project->path('.porta/reviews/agent/t1/2026T01--x.md'));
+        \symlink('..', $this->project->path('.porta/reviews/agent/t1/up'));
+        \symlink('.', $this->project->path('.porta/reviews/agent/again'));
+
+        $review = $reviews->read('agent');
+
+        $this->assertSame(['first'], \array_map(static fn ($c): string => $c->body, $review?->threads[0]->comments ?? []));
+        $this->assertCount(1, $review->threads ?? [], 'a folder linked back is no thread');
+        $this->assertNotSame('', $reviews->fingerprint(), 'and one with links in it ends');
+    }
+
     public function testABrokenThreadHidesNoneAfterIt(): void
     {
         $reviews = $this->reviews([

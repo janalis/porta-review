@@ -274,7 +274,8 @@ final readonly class LocalReviews
     }
 
     /**
-     * Sorted, dot-files left out — the temporary sibling of a write in flight among them.
+     * Sorted, dot-files left out — the temporary sibling of a write in flight
+     * among them — and so is whatever is reached through a link.
      *
      * @return list<string>
      */
@@ -283,7 +284,10 @@ final readonly class LocalReviews
         $names = \is_dir($dir) ? \scandir($dir) : false;
         $names = false === $names ? [] : $names;
 
-        return \array_values(\array_filter($names, static fn (string $name): bool => !\str_starts_with($name, '.')));
+        // Nothing through a link: `.porta/` comes with a clone, and a link
+        // there could loop the poll's walk forever, or pass a file from
+        // outside the project off as a comment.
+        return \array_values(\array_filter($names, fn (string $name): bool => !\str_starts_with($name, '.') && !Files::throughLink($this->root, $dir.'/'.$name)));
     }
 
     private function latestMtime(string $dir): int
