@@ -183,7 +183,8 @@ A prompt that has an agent review your uncommitted changes this way:
 ### Through the IDE, with the mcp plugin
 
 With the [mcp plugin](../../mcp/docs/README.md) on, an agent connected to the running IDE
-has `review_threads`, `review_reply`, `review_resolve` and `review_comment`.
+has `review_threads`, and with mcp's `allowPublish` on, `review_reply`,
+`review_resolve` and `review_comment`.
 They work on whichever review the IDE shows — a pull or merge request as
 well as a local one — and go through the same path as the view, so a reply
 posts as you. A call made while the review is loading waits for it, for up
