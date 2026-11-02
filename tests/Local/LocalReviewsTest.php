@@ -12,6 +12,7 @@ use Porta\ReviewPlugin\Model\Comment;
 use Porta\ReviewPlugin\Model\Review;
 use Porta\ReviewPlugin\Model\Side;
 use Porta\ReviewPlugin\Model\SourceKind;
+use Porta\ReviewPlugin\Model\Thread;
 use Porta\Tests\Support\TempProject;
 
 /**
@@ -128,7 +129,7 @@ final class LocalReviewsTest extends TestCase
         $this->assertSame('first', \file_get_contents($this->project->path('.porta/reviews/agent/t1/2026T00--claude.md')), 'the agent\'s file is as it wrote it');
         $this->assertSame("Done\n", \file_get_contents($this->project->path('.porta/reviews/agent/t1/2026T0001--Pierre H.md')), 'a trailing dot trimmed off the name');
         $review = $reviews->read('agent');
-        $this->assertSame(['a-b-c', 'anonymous'], \array_map(static fn ($c): string => $c->author, $review->conversation ?? []), 'an author is made safe to be a file name');
+        $this->assertSame(['a-b-c', 'anonymous'], \array_map(static fn (Comment $c): string => $c->author, $review->conversation ?? []), 'an author is made safe to be a file name');
         $this->assertCount(3, $review->threads ?? []);
     }
 
@@ -170,7 +171,7 @@ final class LocalReviewsTest extends TestCase
             '.porta/reviews/agent/t2/2026T01--claude.md' => 'fine',
         ]);
 
-        $this->assertSame(['t2'], \array_map(static fn ($t): string => $t->id, $reviews->read('agent')->threads ?? []));
+        $this->assertSame(['t2'], \array_map(static fn (Thread $t): string => $t->id, $reviews->read('agent')->threads ?? []));
     }
 
     public function testWrittenMetaKeepsWhatElseItSaidAndReadsLikeAHandWrittenFile(): void

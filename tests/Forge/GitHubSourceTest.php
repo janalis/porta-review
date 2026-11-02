@@ -12,6 +12,7 @@ use Porta\ReviewPlugin\Model\Anchor;
 use Porta\ReviewPlugin\Model\Review;
 use Porta\ReviewPlugin\Model\Side;
 use Porta\ReviewPlugin\Model\SourceKind;
+use Porta\ReviewPlugin\Model\Thread;
 use Porta\ReviewPlugin\Tests\Support\FakeForge;
 use Porta\ReviewPlugin\Tests\Support\UsesFakeForge;
 use Porta\Tests\Support\PumpsLoop;
@@ -118,7 +119,7 @@ final class GitHubSourceTest extends TestCase
 
         $review = $this->load($source);
 
-        $this->assertSame(['kept'], \array_map(static fn ($t): string => $t->id, $review->threads ?? []));
+        $this->assertSame(['kept'], \array_map(static fn (Thread $t): string => $t->id, $review->threads ?? []));
         $this->assertSame([], $review?->conversation, 'no comments connection: no conversation');
     }
 

@@ -7,6 +7,7 @@ namespace Porta\ReviewPlugin\Tests\Console;
 use PHPUnit\Framework\TestCase;
 use Porta\ReviewPlugin\Console\ReviewCommand;
 use Porta\ReviewPlugin\Local\LocalReviews;
+use Porta\ReviewPlugin\Model\Comment;
 use Porta\Tests\Support\TempProject;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -134,7 +135,7 @@ final class ReviewCommandTest extends TestCase
         }
         $this->exec(['action' => 'comment', 'words' => ['two'], '--review' => 'agent-7']);
 
-        $this->assertSame(['agent-7', 'Git Name'], \array_map(static fn ($c): string => $c->author, $this->reviews()->read('agent-7')->conversation ?? []));
+        $this->assertSame(['agent-7', 'Git Name'], \array_map(static fn (Comment $c): string => $c->author, $this->reviews()->read('agent-7')->conversation ?? []));
     }
 
     public function testTheProjectIsFoundFromAnyDirectoryInsideIt(): void
