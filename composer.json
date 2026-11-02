@@ -1,5 +1,5 @@
 {
-    "name": "porta/review",
+    "name": "janalis/porta-review",
     "description": "Code review conversations — GitHub pull requests, GitLab merge requests and local agent reviews — in a view, in the diff and in the editor",
     "type": "porta-plugin",
     "license": "MIT",
