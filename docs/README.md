@@ -3,6 +3,8 @@
 The bundled `review` plugin shows code-review conversations and lets you answer
 them without leaving Porta. It supports three sources:
 
+![A review: its threads by file, and the selected comment beside its line](/screenshots/plugin-review.svg)
+
 - a **GitHub pull request**;
 - a **GitLab merge request**;
 - a **local review** that an agent (Claude Code, a script, a colleague's tool)
