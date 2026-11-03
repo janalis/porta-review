@@ -22,6 +22,7 @@ final readonly class RemoteUrl
     public static function parse(string $url): ?self
     {
         $url = \trim($url);
+        $m = [];
         if (1 === \preg_match('#^(?:https?|ssh|git)://(?:[^@/]+@)?([^/:]+)(?::\d+)?/(.+)$#i', $url, $m) || 1 === \preg_match('#^(?:[^@/]+@)?([^/:]+):(?!/)(.+)$#', $url, $m)) {
             $path = \trim(\preg_replace('#\.git$#', replacement: '', subject: \trim($m[2], characters: '/')) ?? '', characters: '/');
 
