@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Porta\ReviewPlugin\Model;
 
+use Porta\Support\Files;
+
 /**
  * A file's path relative to the project root — what a review names files by.
  *
@@ -14,8 +16,7 @@ final readonly class ProjectPath
 {
     public static function relative(string $root, string $path): ?string
     {
-        $resolved = \realpath($root);
-        foreach (\array_unique([$root, false === $resolved ? $root : $resolved]) as $candidate) {
+        foreach (\array_unique([$root, Files::canonical($root)]) as $candidate) {
             $prefix = \rtrim($candidate, characters: '/').'/';
             if (\str_starts_with($path, $prefix)) {
                 return \substr($path, \strlen($prefix));
