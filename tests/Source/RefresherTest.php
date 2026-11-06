@@ -10,6 +10,7 @@ use Porta\ReviewPlugin\Local\LocalReviews;
 use Porta\ReviewPlugin\Source\Refresher;
 use Porta\ReviewPlugin\Source\ReviewStore;
 use Porta\Tests\Support\GitBinary;
+use Porta\Tests\Support\Probe;
 use Porta\Tests\Support\PumpsLoop;
 use Porta\Tests\Support\TempProject;
 
@@ -44,13 +45,17 @@ final class RefresherTest extends TestCase
         $refresher = $this->refresher();
         $refresher->start();
 
+        // The two negatives call the poll's own handler rather than pumping a
+        // whole 2s interval each: what they prove is the fingerprint, not the
+        // timer, and the pumps made this a 6.8s test against a 10s limit. The
+        // await in between is the real timer firing.
         try {
-            $this->pump(Refresher::LOCAL_POLL + 0.3);
+            Probe::invoke($refresher, 'pollLocal');
             $this->assertSame(0, $this->refreshes, 'nothing changed');
 
             $this->project->write('.porta/reviews/r/t/1--a.md', 'x');
             $this->await(fn (): bool => 1 === $this->refreshes, 5.0, 'the poll to notice');
-            $this->pump(Refresher::LOCAL_POLL + 0.3);
+            Probe::invoke($refresher, 'pollLocal');
             $this->assertSame(1, $this->refreshes, 'once per change');
         } finally {
             $refresher->stop();
