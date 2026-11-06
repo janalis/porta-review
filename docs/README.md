@@ -10,8 +10,8 @@ them without leaving Porta. It supports three sources:
 - a **local review** that an agent (Claude Code, a script, a colleague's tool)
   writes into the working copy.
 
-It is off by default. Turn it on under **Settings → Plugins → review**; it
-needs the `git` plugin, which is turned on with it.
+Bundled with Porta and off by default — turn it on under **Settings → Plugins
+→ review**. It needs the `git` plugin, which is turned on with it.
 
 ## Where the review comes from
 
