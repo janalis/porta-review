@@ -13,6 +13,7 @@ use Porta\ReviewPlugin\Model\SourceKind;
 use Porta\ReviewPlugin\Model\Thread;
 use Porta\ReviewPlugin\Widget\ReplyBoxWidget;
 use Porta\ReviewPlugin\Widget\ReviewListWidget;
+use Porta\Tests\Support\Probe;
 use Porta\Tests\Support\RendersWidget;
 use Porta\Ui\Theme\Styles;
 use Symfony\Component\Tui\Render\RenderContext;
@@ -176,7 +177,7 @@ final class ReviewListWidgetTest extends TestCase
 
         $box->target('Comment on PR #12');
         $this->assertSame('', $box->text(), 'another target starts afresh');
-        $this->assertSame('Comment on PR #12', $box->targetLabel());
+        $this->assertSame('Comment on PR #12', Probe::get($box, 'target'));
         $box->handleInput('y');
         $box->clearSent('another');
         $this->assertSame('y', $box->text(), 'a draft that is not what was sent stays');

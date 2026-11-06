@@ -126,11 +126,6 @@ final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface,
         $this->invalidate();
     }
 
-    public function targetLabel(): string
-    {
-        return $this->target;
-    }
-
     public function clear(): void
     {
         $this->input->clear();

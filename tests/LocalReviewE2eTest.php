@@ -241,7 +241,7 @@ final class LocalReviewE2eTest extends TestCase
                     $this->assertSame([], Probe::get(Widgets::byId($tui, 'review-diff', ReviewContentWidget::class), 'rows'), 'the pane let go of the file it showed');
                     $tui->setFocus($tui->getById('review-threads'));
                     $tui->handleInput('c');
-                    $this->assertSame('', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->targetLabel(), 'no review to write to');
+                    $this->assertSame('', Probe::get(Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class), 'target'), 'no review to write to');
 
                     $view = Services::resolve($ide, ViewRegistry::class)->find('review');
                     $view?->close();
@@ -249,7 +249,7 @@ final class LocalReviewE2eTest extends TestCase
                     Services::resolve($ide, CommandRegistry::class)->run('review:comment_line');
                     $this->awaitToast($ide, 'No review for this branch');
                     $this->assertSame('No review for this branch', Toasts::last($ide), 'and nothing after it: no file loaded for no review');
-                    $this->assertSame('', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->targetLabel(), 'nor a comment aimed at it');
+                    $this->assertSame('', Probe::get(Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class), 'target'), 'nor a comment aimed at it');
                 },
             ],
         );
