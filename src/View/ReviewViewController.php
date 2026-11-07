@@ -215,6 +215,12 @@ final class ReviewViewController implements ContributedView
         $review = $this->store->review;
         $this->list->show($review, $this->store->loading, $this->store->error, ($this->showResolved)());
         $this->content->showResolved(($this->showResolved)());
+        // No review once a load settles: cleared even while the view is closed
+        // — it moves the generation on, and a file's diff still on its way
+        // would otherwise land on no review at all and crash on it.
+        if (null === $review && !$this->store->loading) {
+            $this->clearShown();
+        }
         if (!$this->open || $this->store->loading) {
             return;
         }
@@ -223,11 +229,13 @@ final class ReviewViewController implements ContributedView
         if (null !== $thread && null === $review?->thread($thread->id)) {
             $this->aim(null, '');
         }
+        if (null === $review) {
+            return;
+        }
         // Re-read whatever the pane shows, now with the answer's threads. A
         // file still loading is not on the pane yet: what it was opened on is
         // the focus, not what the pane shows from before.
         match (true) {
-            null === $review => $this->clearShown(),
             null === $this->shownPath => $this->select($this->list->selectedId() ?? ReviewListWidget::CONVERSATION),
             default => $this->loadFile($review, $this->shownPath, null === $this->loading ? $this->content->currentThread()?->id : $this->loading['focus']),
         };
