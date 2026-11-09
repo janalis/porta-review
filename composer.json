@@ -59,7 +59,11 @@
                         ]
                     ]
                 }
-            ]
+            ],
+            "store": {
+                "title": "Review",
+                "category": "version-control"
+            }
         }
     }
 }
