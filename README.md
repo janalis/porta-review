@@ -2,6 +2,8 @@
 
 Code review conversations — GitHub pull requests, GitLab merge requests and local agent reviews — in a view, in the diff and in the editor.
 
+![A review: its threads by file, and the selected comment beside its line](https://janalis.github.io/porta/screenshots/plugin-review.svg)
+
 This is `janalis/porta-review`, one of the plugins bundled with
 [Porta](https://github.com/janalis/porta), the terminal IDE for PHP. Porta
 ships it already: turn it on under **Settings → Plugins**. Install this
