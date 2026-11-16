@@ -183,7 +183,7 @@ final readonly class LocalReviews
         $dir = $this->directory().'/'.$id.'/'.$thread;
         $marker = $dir.'/'.self::RESOLVED;
 
-        return \is_dir($dir) && ($resolved ? $this->write($marker, '') : $this->unmark($marker));
+        return \is_dir($dir) && ($resolved ? $this->write($marker, contents: '') : $this->unmark($marker));
     }
 
     /** Remove a thread's resolved $marker; false when it cannot be. */

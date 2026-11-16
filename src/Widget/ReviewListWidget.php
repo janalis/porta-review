@@ -111,7 +111,7 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
         $this->showResolved = $showResolved;
         $this->rows = $this->build();
         if (null === $selected || !$this->selectId($selected)) {
-            $this->list->select($this->firstEntry(0, 1) ?? 0);
+            $this->list->select($this->firstEntry(0, step: 1) ?? 0);
         }
         $this->invalidate();
     }
@@ -197,10 +197,10 @@ final class ReviewListWidget extends AbstractWidget implements FocusableInterfac
         $kb = $this->getKeybindings();
         $before = $this->list->selected();
         match (true) {
-            $kb->matches($data, 'exit_view') => $this->fire($this->onExit),
-            $kb->matches($data, 'focus_next_pane') => $this->fire($this->onFocusNext),
-            ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), 10) => $this->moved($before),
-            $kb->matches($data, 'select') => $this->choose(),
+            $kb->matches($data, action: 'exit_view') => $this->fire($this->onExit),
+            $kb->matches($data, action: 'focus_next_pane') => $this->fire($this->onFocusNext),
+            ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), page: 10) => $this->moved($before),
+            $kb->matches($data, action: 'select') => $this->choose(),
             default => $this->runVerb($data, $kb),
         };
     }

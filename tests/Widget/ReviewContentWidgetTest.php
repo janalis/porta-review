@@ -76,7 +76,13 @@ final class ReviewContentWidgetTest extends TestCase
     public function testADiffShowsEachThreadUnderItsLineOnItsSide(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', self::diff(), '', [self::thread('new', 2), self::thread('old', 2, Side::Old, resolved: true), self::thread('off', 40, outdated: true)], focus: 'new');
+        $widget->showFile(
+            'src/A.php',
+            self::diff(),
+            text: '',
+            threads: [self::thread('new', line: 2), self::thread('old', line: 2, side: Side::Old, resolved: true), self::thread('off', line: 40, outdated: true)],
+            focus: 'new',
+        );
 
         $screen = $this->screen($widget);
 
@@ -112,7 +118,7 @@ final class ReviewContentWidgetTest extends TestCase
         // green and red bands, and the changed words a shade stronger.
         $widget = $this->widget();
         $widget->setFocused(false);
-        $widget->showFile('src/A.php', self::diff(), '', []);
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: []);
         $styles = Styles::dark();
 
         $raw = $widget->render(new RenderContext(60, 12));
@@ -128,7 +134,7 @@ final class ReviewContentWidgetTest extends TestCase
     {
         $theme = new SwitchableTerminalTheme(new DarkTerminalTheme());
         $widget = new ReviewContentWidget(new Translator('en'), Styles::dark(), CompactScreen::density(), $theme);
-        $widget->showFile('src/A.php', self::diff(), '', [self::thread('new', 2), self::thread('old', 2, Side::Old)], focus: 'new');
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: [self::thread('new', line: 2), self::thread('old', line: 2, side: Side::Old)], focus: 'new');
         $dark = $widget->render(new RenderContext(60, 20));
 
         $theme->switchTo(new LightTerminalTheme());
@@ -144,7 +150,7 @@ final class ReviewContentWidgetTest extends TestCase
     public function testAThemeSwitchOffAThreadKeepsTheCaretsRow(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', self::diff(), '', []);
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: []);
         $widget->handleInput("\x1b[B");
         $widget->handleInput("\x1b[B");
 
@@ -157,13 +163,13 @@ final class ReviewContentWidgetTest extends TestCase
     public function testAFileWithNoDiffShowsItsTextAndPlacesThreadsByTheirLinesText(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', DiffDocument::parse(''), "<?php\n\$moved;\n\$x;", [
-            self::thread('t', 1, lineText: '$moved;'),
-            self::thread('lost', 9, lineText: 'gone'),
-            self::thread('far', 50),
+        $widget->showFile('src/A.php', DiffDocument::parse(''), text: "<?php\n\$moved;\n\$x;", threads: [
+            self::thread('t', line: 1, lineText: '$moved;'),
+            self::thread('lost', line: 9, lineText: 'gone'),
+            self::thread('far', line: 50),
         ]);
 
-        $screen = $this->screen($widget, 40);
+        $screen = $this->screen($widget, rows: 40);
 
         $this->assertSame('   1 │ <?php', $screen[1]);
         $this->assertSame('   2 │ $moved;', $screen[2]);
@@ -177,7 +183,7 @@ final class ReviewContentWidgetTest extends TestCase
     public function testTheCaretsRowDecidesWhatEachKeyActsOn(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', self::diff(), '', [self::thread('t', 2)]);
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: [self::thread('t', line: 2)]);
         $this->screen($widget);
 
         $widget->handleInput('c'); // the hunk header: no line to comment on
@@ -208,15 +214,15 @@ final class ReviewContentWidgetTest extends TestCase
     {
         $widget = $this->widget();
         $widget->showConversation('PR #12 · Tidy', [new Comment('carol', 'Looks good.', '2026-09-28T11:00:00Z')]);
-        $screen = $this->screen($widget, 6);
+        $screen = $this->screen($widget, rows: 6);
         $this->assertSame(['PR #12 · Tidy                             S show-resolved', 'carol 2026-09-28 11:00', 'Looks good.'], \array_map(trim(...), \array_slice($screen, offset: 0, length: 3)));
         $this->assertFalse($widget->focusThread('nope'));
 
         $widget->showConversation('PR #12', []);
-        $this->assertStringContainsString('No comments yet — press c to write one', $this->screen($widget, 4)[1]);
+        $this->assertStringContainsString('No comments yet — press c to write one', $this->screen($widget, rows: 4)[1]);
 
         $widget->clearContent();
-        $this->assertSame(['Review                                    S show-resolved', '', '', ''], \array_map(trim(...), $this->screen($widget, 4)));
+        $this->assertSame(['Review                                    S show-resolved', '', '', ''], \array_map(trim(...), $this->screen($widget, rows: 4)));
         $widget->handleInput('r');
         $this->assertSame([], $this->acted, 'nothing to act on');
     }
@@ -227,25 +233,25 @@ final class ReviewContentWidgetTest extends TestCase
         $widget = $this->widget();
         $widget->showConversation('PR #12', [new Comment('carol', 'See https://github.com/acme/porta/pull/12/files#diff-a1b2', '2026-09-28T11:00:00Z')]);
 
-        $this->assertSame(['See', 'https://github.com/acme/porta/pull/12/', 'files#diff-a1b2'], \array_map(trim(...), \array_slice($this->screen($widget, 8, 40), offset: 2, length: 3)));
+        $this->assertSame(['See', 'https://github.com/acme/porta/pull/12/', 'files#diff-a1b2'], \array_map(trim(...), \array_slice($this->screen($widget, rows: 8, cols: 40), offset: 2, length: 3)));
     }
 
     public function testARenderAtAnotherWidthRewrapsAndKeepsTheCaretsThread(): void
     {
         $widget = $this->widget();
         $long = new Thread('long', new Anchor('src/A.php', line: 1), [new Comment('alice', \str_repeat('word ', times: 30))]);
-        $widget->showFile('src/A.php', self::diff(), '', [$long], focus: 'long');
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: [$long], focus: 'long');
 
-        $wide = \count(\array_filter($this->screen($widget, 60, 120), static fn (string $r): bool => \str_contains($r, 'word')));
-        $narrow = \count(\array_filter($this->screen($widget, 60, 40), static fn (string $r): bool => \str_contains($r, 'word')));
+        $wide = \count(\array_filter($this->screen($widget, rows: 60, cols: 120), static fn (string $r): bool => \str_contains($r, 'word')));
+        $narrow = \count(\array_filter($this->screen($widget, rows: 60, cols: 40), static fn (string $r): bool => \str_contains($r, 'word')));
 
         $this->assertGreaterThan($wide, $narrow, 'the comment wraps to the pane');
         $this->assertSame('long', $widget->currentThread()?->id, 'still on the thread');
 
-        $widget->showFile('src/A.php', self::diff(), '', []);
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: []);
         $widget->handleInput("\x1b[B");
         $widget->handleInput("\x1b[B");
-        $this->screen($widget, 60, 50);
+        $this->screen($widget, rows: 60, cols: 50);
         $widget->handleInput('o');
         $this->assertSame(['open src/A.php:2:old:$old = 1; -'], $this->acted, 'a re-render with no thread keeps the row');
     }
@@ -263,9 +269,9 @@ final class ReviewContentWidgetTest extends TestCase
     {
         $widget = $this->widget();
         $widget->useSoftWrap();
-        $widget->showFile('src/A.php', self::longDiff(), '', []);
+        $widget->showFile('src/A.php', self::longDiff(), text: '', threads: []);
 
-        $screen = $this->screen($widget, 8, 40);
+        $screen = $this->screen($widget, rows: 8, cols: 40);
         $this->assertMatchesRegularExpression('/^\s+1 │\+n{28}$/', $screen[3], 'the addition\'s first row: 28 columns of text at 40');
         $this->assertSame(\str_repeat(' ', times: 10).'│ '.\str_repeat('n', times: 12), $screen[4], 'its second, numbers blank');
         $this->assertStringContainsString('$keep;', $screen[5]);
@@ -283,7 +289,7 @@ final class ReviewContentWidgetTest extends TestCase
         $widget->useSoftWrap();
         $widget->showFile('src/A.php', DiffDocument::parse(''), \str_repeat('x', times: 50)."\n\$y;", []);
 
-        $screen = $this->screen($widget, 5, 40);
+        $screen = $this->screen($widget, rows: 5, cols: 40);
         $this->assertSame('   1 │ '.\str_repeat('x', times: 33), $screen[1]);
         $this->assertSame('     │ '.\str_repeat('x', times: 17), $screen[2]);
         $this->assertSame('   2 │ $y;', $screen[3]);
@@ -293,20 +299,24 @@ final class ReviewContentWidgetTest extends TestCase
     public function testTurningWrapOnAndOffKeepsTheCaretsLine(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', self::longDiff(), '', []);
-        $this->screen($widget, 8, 40);
+        $widget->showFile('src/A.php', self::longDiff(), text: '', threads: []);
+        $this->screen($widget, rows: 8, cols: 40);
         $widget->handleInput("\x1b[B");
         $widget->handleInput("\x1b[B");
         $widget->handleInput("\x1b[B"); // $keep, the row after the long one
 
         $widget->useSoftWrap();
-        $this->assertGreaterThan(5, \count(\array_filter($this->screen($widget, 8, 40), static fn (string $row): bool => '' !== \trim($row))), 'the long line on rows of its own at once');
+        $this->assertGreaterThan(5, \count(\array_filter($this->screen($widget, rows: 8, cols: 40), static fn (string $row): bool => '' !== \trim($row))), 'the long line on rows of its own at once');
         $widget->handleInput('o');
         $widget->useOneRowPerLine();
         $widget->handleInput('o');
 
         $this->assertSame(['open src/A.php:2:new:$keep; -', 'open src/A.php:2:new:$keep; -'], $this->acted);
-        $this->assertCount(5, \array_filter($this->screen($widget, 8, 40), static fn (string $row): bool => '' !== \trim($row)), 'one row each again: the header, the hunk and three lines');
+        $this->assertCount(
+            5,
+            \array_filter($this->screen($widget, rows: 8, cols: 40), static fn (string $row): bool => '' !== \trim($row)),
+            'one row each again: the header, the hunk and three lines',
+        );
     }
 
     /** Wrapped, a wider pane gives the long line fewer rows: the caret keeps its line, not its index. */
@@ -315,13 +325,13 @@ final class ReviewContentWidgetTest extends TestCase
         $widget = $this->widget();
         $widget->useSoftWrap();
         $widget->showFile('src/A.php', DiffDocument::parse(\implode("\n", ['diff --git a/src/A.php b/src/A.php', '@@ -1,3 +1,3 @@', '-x', '+'.\str_repeat('n', times: 40), ' $keep;', ' $after;'])
-            ."\n"), '', []);
-        $this->screen($widget, 8, 40); // the n's on two rows
+            ."\n"), text: '', threads: []);
+        $this->screen($widget, rows: 8, cols: 40); // the n's on two rows
         foreach (\range(1, end: 4) as $down) {
             $widget->handleInput("\x1b[B");
         }
 
-        $this->screen($widget, 8, 100); // on one
+        $this->screen($widget, rows: 8, cols: 100); // on one
         $widget->handleInput('o');
 
         $this->assertSame(['open src/A.php:2:new:$keep; -'], $this->acted);
@@ -331,7 +341,7 @@ final class ReviewContentWidgetTest extends TestCase
     public function testTurningWrapOnKeepsTheCaretsThread(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', self::longDiff(), '', [self::thread('t', 2)], focus: 't');
+        $widget->showFile('src/A.php', self::longDiff(), text: '', threads: [self::thread('t', line: 2)], focus: 't');
 
         $widget->useSoftWrap();
 
@@ -373,7 +383,7 @@ final class ReviewContentWidgetTest extends TestCase
         $widget->onToggleResolved(static function () use (&$toggled): void {
             ++$toggled;
         });
-        $widget->showFile('src/A.php', self::diff(), '', []);
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: []);
         $rows = fn (int $cols = 60): array => \array_map(rtrim(...), $this->rows($widget->render(new RenderContext($cols, 10))));
 
         $boxed = $rows();
@@ -389,11 +399,11 @@ final class ReviewContentWidgetTest extends TestCase
         $this->assertFalse($widget->hoverHeader(1, $zone), 'no change, no repaint');
         $this->assertTrue($widget->clearHeaderHover());
         $this->assertStringContainsString('Show resolved conversations · off', $widget->tooltipAt(0, $zone)->text ?? '');
-        $this->assertNull($widget->tooltipAt(0, 0), 'the title is no button');
+        $this->assertNull($widget->tooltipAt(0, col: 0), 'the title is no button');
         $this->assertNull($widget->tooltipAt(5, $zone), 'nor is a row under the header');
 
         $widget->handleClick(1, $zone);
-        $widget->handleClick(1, 0); // the title: nothing
+        $widget->handleClick(1, relCol: 0); // the title: nothing
         $widget->handleInput('s');
         $this->assertSame(2, $toggled, 'a click on the toggle, and its key');
 
@@ -401,7 +411,7 @@ final class ReviewContentWidgetTest extends TestCase
         $widget->showResolved(true);
         $this->assertStringContainsString('Show resolved conversations · on', $widget->tooltipAt(0, $zone)->text ?? '');
 
-        $widget->handleClick(4, 0); // a row under the header: the caret goes there
+        $widget->handleClick(4, relCol: 0); // a row under the header: the caret goes there
         $widget->setFocused(true);
         $widget->handleInput('o');
         $this->assertSame(['open src/A.php:1'], $this->acted);
@@ -410,7 +420,7 @@ final class ReviewContentWidgetTest extends TestCase
     public function testAFilesTabIsFourColumns(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', DiffDocument::parse(''), "\tx;", []);
+        $widget->showFile('src/A.php', DiffDocument::parse(''), text: "\tx;", threads: []);
 
         $this->assertSame('   1 │     x;', $this->screen($widget)[1]);
     }
@@ -418,7 +428,7 @@ final class ReviewContentWidgetTest extends TestCase
     public function testAMarkerInsideAHunkEndsNothing(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', DiffDocument::parse("@@ -1 +1 @@\n-old\n\\ No newline at end of file\n+new\n"), '', []);
+        $widget->showFile('src/A.php', DiffDocument::parse("@@ -1 +1 @@\n-old\n\\ No newline at end of file\n+new\n"), text: '', threads: []);
 
         $this->assertStringContainsString('new', \implode("\n", $this->screen($widget)), 'the addition after the old side\'s marker');
     }
@@ -426,14 +436,14 @@ final class ReviewContentWidgetTest extends TestCase
     public function testAClickPicksTheRowUnderItAndBelowTheLastTheLast(): void
     {
         $widget = $this->widget();
-        $widget->showFile('src/A.php', self::diff(), '', []);
+        $widget->showFile('src/A.php', self::diff(), text: '', threads: []);
         $screen = $this->screen($widget);
         // The hunk's row, the first one under the header.
         $first = (int) \array_key_first(\array_filter($screen, static fn (string $row): bool => \str_contains($row, '@@ -1,4')));
 
-        $widget->handleClick(29, 0);
+        $widget->handleClick(29, relCol: 0);
         $widget->handleInput('o');
-        $widget->handleClick($first, 0);
+        $widget->handleClick($first, relCol: 0);
         $widget->handleInput("\x1b[B"); // from the hunk's row down to its first line
         $widget->handleInput('o');
 

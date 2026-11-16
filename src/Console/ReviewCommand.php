@@ -90,7 +90,7 @@ final class ReviewCommand extends PluginCommand
             'add' => $this->add($reviews, $root, $id, $who, $words, $output),
             'reply' => $this->write($reviews->append($id, $words[0] ?? '', $who, $this->message(\array_slice($words, offset: 1))), 'No thread "'.($words[0] ?? '').'" in review "'.$id.'"'),
             'resolve', 'reopen' => $this->write($reviews->resolve($id, $words[0] ?? '', 'resolve' === $action), 'No thread "'.($words[0] ?? '').'" in review "'.$id.'"'),
-            'comment' => $this->write($reviews->append($id, LocalReviews::CONVERSATION, $who, $this->message($words)), 'Could not write the comment'),
+            'comment' => $this->write($reviews->append($id, LocalReviews::CONVERSATION, $who, $this->message($words)), failure: 'Could not write the comment'),
             default => 'Unknown action "'.$action.'" — one of '.\implode(', ', self::ACTIONS),
         };
         if (null !== $failure) {

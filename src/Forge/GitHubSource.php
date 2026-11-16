@@ -54,6 +54,9 @@ final readonly class GitHubSource implements ReviewSource
             .' } } } }'
             .' } } } }';
         $this->graphql($query, ['owner' => $remote->owner(), 'name' => $remote->name(), 'branch' => $this->facts->branch], static function (?Json $data, ?string $error) use ($onDone): void {
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
             $pr = $data?->at('repository', 'pullRequests', 'nodes', 0);
             $onDone(null !== $pr && $pr->isArray() ? self::review($pr) : null, $error);
         });
@@ -117,7 +120,7 @@ final readonly class GitHubSource implements ReviewSource
      */
     private function graphql(string $query, array $variables, \Closure $onDone): void
     {
-        $this->transport->request('POST', 'graphql', ['query' => $query, 'variables' => $variables], static function (?Json $answer, ?string $error) use ($onDone): void {
+        $this->transport->request('POST', path: 'graphql', body: ['query' => $query, 'variables' => $variables], onDone: static function (?Json $answer, ?string $error) use ($onDone): void {
             $onDone($answer?->at('data'), $error);
         });
     }
@@ -125,7 +128,9 @@ final readonly class GitHubSource implements ReviewSource
     private static function review(Json $pr): Review
     {
         $threads = [];
+        // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
         foreach ($pr->at('reviewThreads', 'nodes')->list() as $node) {
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
             $comments = self::comments($node->at('comments', 'nodes'));
             $current = $node->at('line')->int();
             $line = $current ?? $node->at('originalLine')->int();
@@ -148,6 +153,7 @@ final readonly class GitHubSource implements ReviewSource
             (string) $pr->at('number')->int(),
             (string) $pr->at('title')->string(),
             $threads,
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
             self::comments($pr->at('comments', 'nodes')),
             baseSha: $pr->at('baseRefOid')->string(),
             headSha: $pr->at('headRefOid')->string(),
@@ -161,6 +167,7 @@ final readonly class GitHubSource implements ReviewSource
     {
         // A deleted account answers `author: null`; GitHub itself shows "ghost".
         return \array_map(
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
             static fn (Json $node): Comment => new Comment($node->at('author', 'login')->string() ?? 'ghost', (string) $node->at('body')->string(), (string) $node->at('createdAt')->string()),
             $nodes->list(),
         );

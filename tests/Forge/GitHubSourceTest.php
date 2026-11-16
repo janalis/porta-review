@@ -133,7 +133,7 @@ final class GitHubSourceTest extends TestCase
         $this->assertSame([], $this->forge->calls());
 
         $source = $this->source();
-        $this->forge->answer('{"message":"Bad credentials"}', 1);
+        $this->forge->answer('{"message":"Bad credentials"}', code: 1);
         $error = 'unset';
         $done = false;
         $source->load(static function (?Review $r, ?string $e) use (&$error, &$done): void {
@@ -157,21 +157,21 @@ final class GitHubSourceTest extends TestCase
             $this->forge->answerJson(['data' => []]);
         }
 
-        $this->assertNull($this->write(static fn (\Closure $done) => $source->reply($review, $thread, 'Fixed.', $done)));
+        $this->assertNull($this->write(static fn (\Closure $done) => $source->reply($review, $thread, body: 'Fixed.', onDone: $done)));
         $this->assertStringContainsString('addPullRequestReviewThreadReply', (string) $this->forge->body(1)['query']);
         $this->assertSame(['id' => 'PRRT_current', 'body' => 'Fixed.'], $this->forge->body(1)['variables']);
 
-        $this->write(static fn (\Closure $done) => $source->setResolved($review, $thread, true, $done));
+        $this->write(static fn (\Closure $done) => $source->setResolved($review, $thread, resolved: true, onDone: $done));
         $this->assertStringContainsString('resolveReviewThread(input: {threadId: $id})', (string) $this->forge->body(2)['query']);
         $this->assertStringNotContainsString('$body', (string) $this->forge->body(2)['query'], 'no body declared when none is sent');
-        $this->write(static fn (\Closure $done) => $source->setResolved($review, $thread, false, $done));
+        $this->write(static fn (\Closure $done) => $source->setResolved($review, $thread, resolved: false, onDone: $done));
         $this->assertStringContainsString('unresolveReviewThread', (string) $this->forge->body(3)['query']);
 
-        $this->write(static fn (\Closure $done) => $source->converse($review, 'Ready?', $done));
+        $this->write(static fn (\Closure $done) => $source->converse($review, body: 'Ready?', onDone: $done));
         $this->assertStringContainsString('addComment', (string) $this->forge->body(4)['query']);
         $this->assertSame(['id' => 'PR_kwDOAAb9Ss8AAAABFgX71A', 'body' => 'Ready?'], $this->forge->body(4)['variables']);
 
-        $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 9, Side::Old), 'Why?', $done));
+        $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 9, Side::Old), body: 'Why?', onDone: $done));
         $this->assertSame(['api', '--method', 'POST', 'repos/acme/app/pulls/12/comments'], \array_slice($this->forge->calls()[5]['argv'], offset: 0, length: 4));
         $this->assertSame(['body' => 'Why?', 'commit_id' => 'e25895125a800deba1db2e7f3274ccb2eecde3e1', 'path' => 'src/A.php', 'line' => 9, 'side' => 'LEFT'], $this->forge->body(5));
     }
@@ -179,11 +179,11 @@ final class GitHubSourceTest extends TestCase
     public function testANewCommentOnTheNewSideIsRight(): void
     {
         $source = $this->source();
-        $this->forge->answerFixture('github-pull-request.json')->answer('{"message":"Unprocessable"}', 1);
+        $this->forge->answerFixture('github-pull-request.json')->answer('{"message":"Unprocessable"}', code: 1);
         $review = $this->load($source);
         \assert(null !== $review, description: 'loaded');
 
-        $error = $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 3), 'Hm', $done));
+        $error = $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 3), body: 'Hm', onDone: $done));
 
         $this->assertSame('RIGHT', $this->forge->body(1)['side']);
         $this->assertSame('Unprocessable', $error, 'a refused write says why');

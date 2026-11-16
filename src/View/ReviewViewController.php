@@ -205,7 +205,7 @@ final class ReviewViewController implements ContributedView
             return;
         }
         if ($anchor->path !== $this->shownPath) {
-            $this->loadFile($this->store->review, $anchor->path, null);
+            $this->loadFile($this->store->review, $anchor->path, focus: null);
         }
         $this->aim(ReplyTarget::line($anchor), $this->api->trans('New comment on %path%:%line%', ['%path%' => $anchor->path, '%line%' => $anchor->line]));
     }
@@ -227,7 +227,7 @@ final class ReviewViewController implements ContributedView
         // A reply target the reload took away is no target any more.
         $thread = $this->target?->thread;
         if (null !== $thread && null === $review?->thread($thread->id)) {
-            $this->aim(null, '');
+            $this->aim(null, label: '');
         }
         if (null === $review) {
             return;
@@ -345,7 +345,7 @@ final class ReviewViewController implements ContributedView
             };
         }, function (?string $error) use ($body): void {
             if (null !== $error) {
-                $this->api->notify($error, ToastSeverity::Error, 6.0);
+                $this->api->notify($error, ToastSeverity::Error, seconds: 6.0);
 
                 return;
             }
@@ -363,7 +363,7 @@ final class ReviewViewController implements ContributedView
             static fn (ReviewSource $source, Review $review, \Closure $done) => $source->setResolved($review, $thread, !$thread->resolved, $done),
             fn (?string $error) => null === $error
                 ? $this->api->notify($thread->resolved ? $this->api->trans('Thread reopened') : $this->api->trans('Thread resolved'), ToastSeverity::Success)
-                : $this->api->notify($error, ToastSeverity::Error, 6.0),
+                : $this->api->notify($error, ToastSeverity::Error, seconds: 6.0),
         );
     }
 

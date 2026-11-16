@@ -99,7 +99,7 @@ final class Sources
         return new ForgeTransport(
             $this->root,
             $remote->host,
-            fn (): ?string => $this->binary('ghBinary', 'gh'),
+            fn (): ?string => $this->binary('ghBinary', name: 'gh'),
             $public ? ['GH_TOKEN', 'GITHUB_TOKEN'] : ['GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN'],
             static fn (string $path): string => match (true) {
                 $public => 'https://api.github.com/'.$path,
@@ -117,7 +117,7 @@ final class Sources
         return new ForgeTransport(
             $this->root,
             $remote->host,
-            fn (): ?string => $this->binary('glabBinary', 'glab'),
+            fn (): ?string => $this->binary('glabBinary', name: 'glab'),
             ['GITLAB_TOKEN'],
             static fn (string $path): string => 'https://'.$remote->host.'/api/v4/'.$path,
             static fn (#[\SensitiveParameter] string $token): string => 'PRIVATE-TOKEN: '.$token,

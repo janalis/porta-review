@@ -66,7 +66,7 @@ final class ReviewStoreTest extends TestCase
 
         $store->refresh();
         \array_shift($this->resolving)($this->source);
-        $this->source->answer(null, 'Bad credentials');
+        $this->source->answer(null, error: 'Bad credentials');
         $this->assertSame([null, 'Bad credentials'], [$store->review, $store->error]);
     }
 
@@ -133,7 +133,7 @@ final class ReviewStoreTest extends TestCase
         \array_shift($this->resolving)($this->source);
         $this->source->answer(self::review());
         $errors = [];
-        $store->act(static fn (ReviewSource $s, Review $r, \Closure $done) => $s->converse($r, 'hi', $done), static function (?string $e) use (&$errors): void {
+        $store->act(static fn (ReviewSource $s, Review $r, \Closure $done) => $s->converse($r, body: 'hi', onDone: $done), static function (?string $e) use (&$errors): void {
             $errors[] = $e;
         });
         $this->assertSame(['converse: hi'], $this->source->writes);
@@ -143,7 +143,7 @@ final class ReviewStoreTest extends TestCase
         $this->source->writeError = 'Forbidden';
         \array_shift($this->resolving)($this->source);
         $this->source->answer(self::review());
-        $store->act(static fn (ReviewSource $s, Review $r, \Closure $done) => $s->converse($r, 'again', $done), static function (?string $e) use (&$errors): void {
+        $store->act(static fn (ReviewSource $s, Review $r, \Closure $done) => $s->converse($r, body: 'again', onDone: $done), static function (?string $e) use (&$errors): void {
             $errors[] = $e;
         });
         $this->assertSame([null, 'Forbidden'], $errors);

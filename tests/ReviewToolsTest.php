@@ -41,7 +41,7 @@ final class ReviewToolsTest extends TestCase
         $source = $this->source;
         $this->store = new ReviewStore(static fn (\Closure $onDone) => $onDone($source));
         $settings = new PluginSettings('/p', []);
-        $this->api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
+        $this->api = new PluginManager(new EventDispatcher(), $settings)->api('review', rootDir: '/p', settings: $settings);
         new ReviewTools($this->api, $this->store)->register();
     }
 
@@ -100,10 +100,10 @@ final class ReviewToolsTest extends TestCase
                 ]],
                 'conversation' => [['author' => 'carol', 'body' => 'Overall fine.', 'createdAt' => '']],
             ],
-            $this->callTool($this->api, 'threads'),
+            $this->callTool($this->api, id: 'threads'),
         );
 
-        $all = $this->callTool($this->api, 'threads', ['includeResolved' => true]);
+        $all = $this->callTool($this->api, id: 'threads', arguments: ['includeResolved' => true]);
         $this->assertIsArray($all);
         $this->assertSame(['closed', 'open'], \array_column($all['threads'], 'id'));
         $this->assertTrue($all['threads'][0]['outdated']);
@@ -111,16 +111,16 @@ final class ReviewToolsTest extends TestCase
 
     public function testWithoutAReviewItSaysWhy(): void
     {
-        $this->load(null, 'gh is not signed in');
-        $this->refused('threads', [], 'gh is not signed in');
+        $this->load(null, error: 'gh is not signed in');
+        $this->refused('threads', [], says: 'gh is not signed in');
 
         $empty = new ReviewStore(static fn (\Closure $onDone) => $onDone(null));
         $empty->refresh();
         $settings = new PluginSettings('/p', []);
-        $this->api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
+        $this->api = new PluginManager(new EventDispatcher(), $settings)->api('review', rootDir: '/p', settings: $settings);
         new ReviewTools($this->api, $empty)->register();
-        $this->refused('threads', [], 'This branch has no review');
-        $this->refused('comment', ['path' => 'a', 'line' => 1, 'body' => 'x'], 'This branch has no review');
+        $this->refused('threads', [], says: 'This branch has no review');
+        $this->refused('comment', ['path' => 'a', 'line' => 1, 'body' => 'x'], says: 'This branch has no review');
     }
 
     public function testACallDuringALoadWaitsForItToSettle(): void
@@ -129,7 +129,7 @@ final class ReviewToolsTest extends TestCase
         $source = $this->source;
         EventLoop::delay(0.02, static fn () => $source->answer(self::review()));
 
-        $threads = $this->callTool($this->api, 'threads');
+        $threads = $this->callTool($this->api, id: 'threads');
 
         $this->assertIsArray($threads);
         $this->assertSame('Cart totals', $threads['title'], 'it waited for the load instead of refusing');
@@ -138,13 +138,13 @@ final class ReviewToolsTest extends TestCase
     public function testAReadRightAfterAWriteSeesTheReloadedReview(): void
     {
         $this->load(self::review());
-        $this->callTool($this->api, 'reply', ['thread' => 'open', 'body' => 'Done']);
+        $this->callTool($this->api, id: 'reply', arguments: ['thread' => 'open', 'body' => 'Done']);
         $this->assertTrue($this->store->loading, 'the write reloads');
         $source = $this->source;
         $renamed = new Review(SourceKind::GitHub, '42', 'Renamed', self::review()->threads);
         EventLoop::delay(0.02, static fn () => $source->answer($renamed));
 
-        $threads = $this->callTool($this->api, 'threads');
+        $threads = $this->callTool($this->api, id: 'threads');
 
         $this->assertIsArray($threads);
         $this->assertSame('Renamed', $threads['title']);
@@ -154,11 +154,11 @@ final class ReviewToolsTest extends TestCase
     {
         $this->store->refresh(); // and never answered
         $settings = new PluginSettings('/p', []);
-        $api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
+        $api = new PluginManager(new EventDispatcher(), $settings)->api('review', rootDir: '/p', settings: $settings);
         new ReviewTools($api, $this->store, loadTimeout: 0.05)->register();
 
         try {
-            $this->callTool($api, 'threads');
+            $this->callTool($api, id: 'threads');
             $this->fail('a load that never settles must not hang the caller');
         } catch (\RuntimeException $e) {
             $this->assertSame('The review is still loading after 0.05s — ask again later', $e->getMessage());
@@ -169,43 +169,43 @@ final class ReviewToolsTest extends TestCase
     {
         $this->load(self::review());
 
-        $this->assertSame('Resolved open', $this->callTool($this->api, 'resolve', ['thread' => 'open']));
+        $this->assertSame('Resolved open', $this->callTool($this->api, id: 'resolve', arguments: ['thread' => 'open']));
         $this->source->answer(self::review());
-        $this->assertSame('Reopened closed', $this->callTool($this->api, 'resolve', ['thread' => 'closed', 'resolved' => false]));
+        $this->assertSame('Reopened closed', $this->callTool($this->api, id: 'resolve', arguments: ['thread' => 'closed', 'resolved' => false]));
         $this->source->answer(self::review());
         $this->assertSame(['resolve open', 'reopen closed'], $this->source->writes);
 
-        $this->assertSame('closed is already resolved', $this->callTool($this->api, 'resolve', ['thread' => 'closed', 'resolved' => true]));
-        $this->assertSame('open is already open', $this->callTool($this->api, 'resolve', ['thread' => 'open', 'resolved' => false]));
+        $this->assertSame('closed is already resolved', $this->callTool($this->api, id: 'resolve', arguments: ['thread' => 'closed', 'resolved' => true]));
+        $this->assertSame('open is already open', $this->callTool($this->api, id: 'resolve', arguments: ['thread' => 'open', 'resolved' => false]));
         $this->assertCount(2, $this->source->writes, 'nothing to change, nothing written');
-        $this->refused('resolve', ['thread' => 'nope'], 'No thread "nope" in this review');
+        $this->refused('resolve', ['thread' => 'nope'], says: 'No thread "nope" in this review');
     }
 
     public function testAReplyGoesToTheSourceAndItsComplaintComesBack(): void
     {
         $this->load(self::review());
 
-        $this->assertSame('Replied to open', $this->callTool($this->api, 'reply', ['thread' => 'open', 'body' => 'Fixed in abc123']));
+        $this->assertSame('Replied to open', $this->callTool($this->api, id: 'reply', arguments: ['thread' => 'open', 'body' => 'Fixed in abc123']));
         $this->assertSame(['reply open: Fixed in abc123'], $this->source->writes);
         $this->assertTrue($this->store->loading, 'a write reloads, as the view\'s does');
 
         $this->source->answer(self::review());
         $this->source->writeError = 'Resource not accessible';
-        $this->refused('reply', ['thread' => 'open', 'body' => 'x'], 'Resource not accessible');
-        $this->refused('reply', ['thread' => 'nope', 'body' => 'x'], 'No thread "nope" in this review');
-        $this->refused('reply', ['thread' => 'open', 'body' => ' '], 'body is required');
-        $this->refused('reply', ['body' => 'x'], 'thread is required');
+        $this->refused('reply', ['thread' => 'open', 'body' => 'x'], says: 'Resource not accessible');
+        $this->refused('reply', ['thread' => 'nope', 'body' => 'x'], says: 'No thread "nope" in this review');
+        $this->refused('reply', ['thread' => 'open', 'body' => ' '], says: 'body is required');
+        $this->refused('reply', ['body' => 'x'], says: 'thread is required');
     }
 
     public function testACommentStartsAThreadOnALine(): void
     {
         $this->load(self::review());
 
-        $this->assertSame('Commented on src/Cart.php:3', $this->callTool($this->api, 'comment', ['path' => 'src/Cart.php', 'line' => 3, 'body' => 'Why?']));
+        $this->assertSame('Commented on src/Cart.php:3', $this->callTool($this->api, id: 'comment', arguments: ['path' => 'src/Cart.php', 'line' => 3, 'body' => 'Why?']));
         $this->assertSame(['comment src/Cart.php:3: Why?'], $this->source->writes);
 
-        $this->refused('comment', ['path' => 'src/Cart.php', 'line' => 0, 'body' => 'x'], 'line is a positive integer');
-        $this->refused('comment', ['path' => 'src/Cart.php', 'line' => '3', 'body' => 'x'], 'line is a positive integer');
+        $this->refused('comment', ['path' => 'src/Cart.php', 'line' => 0, 'body' => 'x'], says: 'line is a positive integer');
+        $this->refused('comment', ['path' => 'src/Cart.php', 'line' => '3', 'body' => 'x'], says: 'line is a positive integer');
     }
 
     public function testAWriteThatAnswersLaterIsWaitedFor(): void
@@ -233,12 +233,12 @@ final class ReviewToolsTest extends TestCase
         $store = new ReviewStore(static fn (\Closure $onDone) => $onDone($slow));
         $store->refresh();
         $settings = new PluginSettings('/p', []);
-        $api = new PluginManager(new EventDispatcher(), $settings)->api('review', '/p', $settings);
+        $api = new PluginManager(new EventDispatcher(), $settings)->api('review', rootDir: '/p', settings: $settings);
         new ReviewTools($api, $store)->register();
         EventLoop::delay(0.02, static function () use ($slow): void {
             $slow->waiting[0](null);
         });
 
-        $this->assertSame('Replied to open', $this->callTool($api, 'reply', ['thread' => 'open', 'body' => 'x']));
+        $this->assertSame('Replied to open', $this->callTool($api, id: 'reply', arguments: ['thread' => 'open', 'body' => 'x']));
     }
 }

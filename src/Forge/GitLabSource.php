@@ -40,10 +40,11 @@ final readonly class GitLabSource implements ReviewSource
             return;
         }
         $project = 'projects/'.\rawurlencode($remote->path);
-        $this->transport->request('GET', $project.'/merge_requests?state=opened&per_page=1&source_branch='.\rawurlencode($this->facts->branch), null, function (?Json $list, ?string $error) use (
-            $project,
-            $onDone,
-        ): void {
+        $this->transport->request('GET', $project.'/merge_requests?state=opened&per_page=1&source_branch='.\rawurlencode($this->facts->branch), body: null, onDone: function (
+            ?Json $list,
+            ?string $error,
+        ) use ($project, $onDone): void {
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
             $iid = $list?->at(0, 'iid')->int();
             if (null === $iid) {
                 $onDone(null, $error);
@@ -51,13 +52,16 @@ final readonly class GitLabSource implements ReviewSource
                 return;
             }
             // The list leaves `diff_refs` out, and a new diff note has to quote them back.
-            $this->transport->request('GET', $project.'/merge_requests/'.$iid, null, function (?Json $mr, ?string $error) use ($project, $iid, $onDone): void {
+            $this->transport->request('GET', $project.'/merge_requests/'.$iid, body: null, onDone: function (?Json $mr, ?string $error) use ($project, $iid, $onDone): void {
                 if (null === $mr) {
                     $onDone(null, $error);
 
                     return;
                 }
-                $this->transport->request('GET', $project.'/merge_requests/'.$iid.'/discussions?per_page=100', null, static function (?Json $discussions, ?string $error) use ($mr, $onDone): void {
+                $this->transport->request('GET', $project.'/merge_requests/'.$iid.'/discussions?per_page=100', body: null, onDone: static function (?Json $discussions, ?string $error) use (
+                    $mr,
+                    $onDone,
+                ): void {
                     $onDone(null === $discussions ? null : self::review($mr, $discussions), $error);
                 });
             });
@@ -116,6 +120,7 @@ final readonly class GitLabSource implements ReviewSource
 
     private static function review(Json $mr, Json $discussions): Review
     {
+        // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
         $head = $mr->at('diff_refs', 'head_sha')->string();
         $threads = [];
         $conversation = [];
@@ -149,9 +154,11 @@ final readonly class GitLabSource implements ReviewSource
             (string) $mr->at('title')->string(),
             $threads,
             $conversation,
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
             baseSha: $mr->at('diff_refs', 'base_sha')->string(),
             headSha: $head,
             url: $mr->at('web_url')->string(),
+            // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
             startSha: $mr->at('diff_refs', 'start_sha')->string(),
         );
     }
@@ -167,6 +174,7 @@ final readonly class GitLabSource implements ReviewSource
 
     private static function note(Json $note): Comment
     {
+        // @mago-expect lint:literal-named-argument -- a variadic, which cannot take a named argument: mago#2741
         return new Comment($note->at('author', 'username')->string() ?? '?', (string) $note->at('body')->string(), (string) $note->at('created_at')->string());
     }
 }

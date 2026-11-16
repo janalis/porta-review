@@ -160,9 +160,9 @@ final class ReplyBoxWidget extends AbstractWidget implements FocusableInterface,
     {
         $kb = $this->getKeybindings();
         match (true) {
-            $kb->matches($data, 'exit_view') => $this->fire($this->onExit),
-            $kb->matches($data, 'send') => $this->submit(),
-            $kb->matches($data, 'focus_next_pane') => $this->fire($this->onFocusNext),
+            $kb->matches($data, action: 'exit_view') => $this->fire($this->onExit),
+            $kb->matches($data, action: 'send') => $this->submit(),
+            $kb->matches($data, action: 'focus_next_pane') => $this->fire($this->onFocusNext),
             '' !== $this->target && $this->input->handleKey($data, $kb) => $this->invalidate(),
             default => null,
         };

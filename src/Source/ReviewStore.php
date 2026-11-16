@@ -76,7 +76,7 @@ final class ReviewStore
                 return;
             }
             if (null === $source) {
-                $this->settle(null, null, null);
+                $this->settle(null, review: null, error: null);
 
                 return;
             }

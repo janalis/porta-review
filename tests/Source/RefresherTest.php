@@ -50,12 +50,12 @@ final class RefresherTest extends TestCase
         // timer, and the pumps made this a 6.8s test against a 10s limit. The
         // await in between is the real timer firing.
         try {
-            Probe::invoke($refresher, 'pollLocal');
+            Probe::invoke($refresher, method: 'pollLocal');
             $this->assertSame(0, $this->refreshes, 'nothing changed');
 
-            $this->project->write('.porta/reviews/r/t/1--a.md', 'x');
-            $this->await(fn (): bool => 1 === $this->refreshes, 5.0, 'the poll to notice');
-            Probe::invoke($refresher, 'pollLocal');
+            $this->project->write('.porta/reviews/r/t/1--a.md', content: 'x');
+            $this->await(fn (): bool => 1 === $this->refreshes, timeout: 5.0, what: 'the poll to notice');
+            Probe::invoke($refresher, method: 'pollLocal');
             $this->assertSame(1, $this->refreshes, 'once per change');
         } finally {
             $refresher->stop();
@@ -70,7 +70,7 @@ final class RefresherTest extends TestCase
         $refresher->start();
 
         try {
-            $this->await(fn (): bool => $this->refreshes >= 1, 3.0, 'the forge poll');
+            $this->await(fn (): bool => $this->refreshes >= 1, timeout: 3.0, what: 'the forge poll');
             $this->seconds = 0;
             $refresher->rearm();
             $seen = $this->refreshes;
@@ -94,7 +94,7 @@ final class RefresherTest extends TestCase
 
             $this->project->git('checkout', '-q', '-b', 'other');
             $refresher->branchMayHaveMoved();
-            $this->await(fn (): bool => 1 === $this->refreshes, 5.0, 'the branch switch');
+            $this->await(fn (): bool => 1 === $this->refreshes, timeout: 5.0, what: 'the branch switch');
         } finally {
             $refresher->stop();
         }

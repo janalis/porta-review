@@ -118,14 +118,14 @@ final class GitLabSourceTest extends TestCase
         $this->assertSame([null, null], $this->load($source), 'no open merge request for the branch');
 
         $source = $this->source();
-        $this->forge->answerJson([['iid' => 7]])->answer('{"message":"403 Forbidden"}', 1);
+        $this->forge->answerJson([['iid' => 7]])->answer('{"message":"403 Forbidden"}', code: 1);
         $this->assertSame([null, '403 Forbidden'], $this->load($source));
 
         $source = $this->source();
         $this->forge
             ->answerJson([['iid' => 7]])
             ->answerFixture('gitlab-merge-request.json')
-            ->answer('{"error":"timeout"}', 1);
+            ->answer('{"error":"timeout"}', code: 1);
         $this->assertSame([null, 'timeout'], $this->load($source));
 
         $this->assertSame([null, null], $this->load($this->source(null)), 'no remote: nothing asked');
@@ -176,25 +176,25 @@ final class GitLabSourceTest extends TestCase
         }
         $mr = 'projects/acme%2Ftools%2Fapp/merge_requests/7';
 
-        $this->assertNull($this->write(static fn (\Closure $done) => $source->reply($review, $thread, 'Fixed.', $done)));
+        $this->assertNull($this->write(static fn (\Closure $done) => $source->reply($review, $thread, body: 'Fixed.', onDone: $done)));
         $this->assertSame(['POST', $mr.'/discussions/'.$thread->id.'/notes'], \array_slice($this->forge->calls()[3]['argv'], offset: 2, length: 2));
         $this->assertSame(['body' => 'Fixed.'], $this->forge->body(3));
 
-        $this->write(static fn (\Closure $done) => $source->setResolved($review, $thread, true, $done));
+        $this->write(static fn (\Closure $done) => $source->setResolved($review, $thread, resolved: true, onDone: $done));
         $this->assertSame(['PUT', $mr.'/discussions/'.$thread->id], \array_slice($this->forge->calls()[4]['argv'], offset: 2, length: 2));
         $this->assertSame(['resolved' => true], $this->forge->body(4));
 
-        $this->write(static fn (\Closure $done) => $source->converse($review, 'Ready?', $done));
+        $this->write(static fn (\Closure $done) => $source->converse($review, body: 'Ready?', onDone: $done));
         $this->assertSame(['POST', $mr.'/notes'], \array_slice($this->forge->calls()[5]['argv'], offset: 2, length: 2));
 
-        $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 9), 'Why?', $done));
+        $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 9), body: 'Why?', onDone: $done));
         $this->assertSame(['POST', $mr.'/discussions'], \array_slice($this->forge->calls()[6]['argv'], offset: 2, length: 2));
         $position = $this->forge->body(6)['position'] ?? null;
         $this->assertIsArray($position);
         $this->assertSame(['text', 'src/A.php', 'src/A.php', 9], [$position['position_type'], $position['old_path'], $position['new_path'], $position['new_line']]);
         $this->assertSame([$review->baseSha, $review->startSha, $review->headSha], [$position['base_sha'], $position['start_sha'], $position['head_sha']]);
 
-        $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 2, Side::Old), 'Why?', $done));
+        $this->write(static fn (\Closure $done) => $source->comment($review, new Anchor('src/A.php', 2, Side::Old), body: 'Why?', onDone: $done));
         $this->assertSame(2, $this->forge->body(7)['position']['old_line'] ?? null, 'the old side is `old_line`');
     }
 }

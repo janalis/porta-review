@@ -106,25 +106,25 @@ final class LocalReviewsTest extends TestCase
     {
         $reviews = $this->reviews(['.porta/reviews/agent/t1/thread.json' => '{"path":"a","line":1}', '.porta/reviews/agent/t1/2026T00--claude.md' => 'first']);
 
-        $this->assertTrue($reviews->append('agent', 't1', 'Pierre H.', "Done\n"));
-        $this->assertTrue($reviews->append('agent', LocalReviews::CONVERSATION, "a/b\\c\n", 'Hi'), 'the conversation directory is made on first use');
-        $this->assertTrue($reviews->append('agent', LocalReviews::CONVERSATION, ' .. ', 'Anyone?'));
-        $this->assertFalse($reviews->append('agent', 'gone', 'x', 'y'), 'a thread that is not there');
+        $this->assertTrue($reviews->append('agent', thread: 't1', author: 'Pierre H.', body: "Done\n"));
+        $this->assertTrue($reviews->append('agent', LocalReviews::CONVERSATION, author: "a/b\\c\n", body: 'Hi'), 'the conversation directory is made on first use');
+        $this->assertTrue($reviews->append('agent', LocalReviews::CONVERSATION, author: ' .. ', body: 'Anyone?'));
+        $this->assertFalse($reviews->append('agent', thread: 'gone', author: 'x', body: 'y'), 'a thread that is not there');
 
-        $thread = $reviews->open('agent', new Anchor('src/C.php', 7, Side::New, 'return 1;'), 'Pierre', 'Why 1?');
+        $thread = $reviews->open('agent', new Anchor('src/C.php', 7, Side::New, 'return 1;'), author: 'Pierre', body: 'Why 1?');
         $this->assertSame('t2026T0004', $thread);
         $this->assertSame(
             ['path' => 'src/C.php', 'line' => 7, 'side' => 'new', 'lineText' => 'return 1;'],
             \json_decode((string) \file_get_contents($this->project->path('.porta/reviews/agent/t2026T0004/thread.json')), associative: true, flags: \JSON_THROW_ON_ERROR),
         );
-        $this->assertNotNull($reviews->open('agent', new Anchor('src/C.php', 8), 'Pierre', 'And 2?'));
+        $this->assertNotNull($reviews->open('agent', new Anchor('src/C.php', 8), author: 'Pierre', body: 'And 2?'));
 
-        $this->assertTrue($reviews->resolve('agent', 't1', true));
+        $this->assertTrue($reviews->resolve('agent', thread: 't1', resolved: true));
         $this->assertFileExists($this->project->path('.porta/reviews/agent/t1/resolved'));
-        $this->assertTrue($reviews->resolve('agent', 't1', false));
-        $this->assertTrue($reviews->resolve('agent', 't1', false), 'unresolving twice is still unresolved');
+        $this->assertTrue($reviews->resolve('agent', thread: 't1', resolved: false));
+        $this->assertTrue($reviews->resolve('agent', thread: 't1', resolved: false), 'unresolving twice is still unresolved');
         $this->assertFileDoesNotExist($this->project->path('.porta/reviews/agent/t1/resolved'));
-        $this->assertFalse($reviews->resolve('agent', 'gone', true));
+        $this->assertFalse($reviews->resolve('agent', thread: 'gone', resolved: true));
 
         $this->assertSame('first', \file_get_contents($this->project->path('.porta/reviews/agent/t1/2026T00--claude.md')), 'the agent\'s file is as it wrote it');
         $this->assertSame("Done\n", \file_get_contents($this->project->path('.porta/reviews/agent/t1/2026T0001--Pierre H.md')), 'a trailing dot trimmed off the name');
@@ -140,9 +140,9 @@ final class LocalReviewsTest extends TestCase
         $reviews = $this->reviews(['.porta/reviews/agent/.keep' => '']);
         \symlink($elsewhere->dir, $this->project->path('.porta/reviews/agent/t1'));
 
-        $this->assertFalse($reviews->append('agent', 't1', 'Pierre', 'Hi'));
-        $this->assertFalse($reviews->resolve('agent', 't1', true));
-        $this->assertFalse($reviews->resolve('agent', 't1', false));
+        $this->assertFalse($reviews->append('agent', thread: 't1', author: 'Pierre', body: 'Hi'));
+        $this->assertFalse($reviews->resolve('agent', thread: 't1', resolved: true));
+        $this->assertFalse($reviews->resolve('agent', thread: 't1', resolved: false));
         $this->assertSame(['resolved'], \array_values(\array_diff((array) \scandir($elsewhere->dir), ['.', '..'])));
     }
 
@@ -178,10 +178,10 @@ final class LocalReviewsTest extends TestCase
     {
         $reviews = $this->reviews(['.porta/reviews/agent/review.json' => '{"base":"main"}']);
 
-        $this->assertTrue($reviews->describe('agent', 'Tidy ü/ä'));
+        $this->assertTrue($reviews->describe('agent', title: 'Tidy ü/ä'));
         $this->assertSame("{\n    \"base\": \"main\",\n    \"title\": \"Tidy ü/ä\"\n}\n", \file_get_contents($this->project->path('.porta/reviews/agent/review.json')));
 
-        $thread = $reviews->open('agent', new Anchor('src/ü.php', 2, Side::New), 'x', 'y');
+        $thread = $reviews->open('agent', new Anchor('src/ü.php', 2, Side::New), author: 'x', body: 'y');
         $this->assertSame("{\n    \"path\": \"src/ü.php\",\n    \"line\": 2,\n    \"side\": \"new\"\n}\n", \file_get_contents($this->project->path(".porta/reviews/agent/{$thread}/thread.json")));
     }
 
@@ -189,8 +189,8 @@ final class LocalReviewsTest extends TestCase
     {
         $reviews = $this->reviews();
 
-        $this->assertFalse($reviews->describe('agent', "bad \xC3"));
-        $this->assertNull($reviews->open('agent', new Anchor("bad \xC3", 1), 'x', 'y'));
+        $this->assertFalse($reviews->describe('agent', title: "bad \xC3"));
+        $this->assertNull($reviews->open('agent', new Anchor("bad \xC3", 1), author: 'x', body: 'y'));
     }
 
     public function testAFailedWriteSaysSo(): void
@@ -200,9 +200,9 @@ final class LocalReviewsTest extends TestCase
         \chmod($this->project->path('.porta/reviews/agent'), permissions: 0o500);
 
         try {
-            $this->assertFalse($reviews->append('agent', 't1', 'x', 'y'));
-            $this->assertFalse($reviews->resolve('agent', 't1', true));
-            $this->assertNull($reviews->open('agent', new Anchor('a', 1), 'x', 'y'));
+            $this->assertFalse($reviews->append('agent', thread: 't1', author: 'x', body: 'y'));
+            $this->assertFalse($reviews->resolve('agent', thread: 't1', resolved: true));
+            $this->assertNull($reviews->open('agent', new Anchor('a', 1), author: 'x', body: 'y'));
         } finally {
             \chmod($this->project->path('.porta/reviews/agent/t1'), permissions: 0o700);
             \chmod($this->project->path('.porta/reviews/agent'), permissions: 0o700);
@@ -210,7 +210,7 @@ final class LocalReviewsTest extends TestCase
         \touch($this->project->path('.porta/reviews/agent/t1/resolved'));
         \chmod($this->project->path('.porta/reviews/agent/t1'), permissions: 0o500);
         try {
-            $this->assertFalse($reviews->resolve('agent', 't1', false), 'the marker could not be removed');
+            $this->assertFalse($reviews->resolve('agent', thread: 't1', resolved: false), 'the marker could not be removed');
         } finally {
             \chmod($this->project->path('.porta/reviews/agent/t1'), permissions: 0o700);
         }
@@ -222,7 +222,7 @@ final class LocalReviewsTest extends TestCase
         $before = $reviews->fingerprint();
 
         $this->assertSame($before, $reviews->fingerprint(), 'stable while nothing changes');
-        $reviews->append('agent', 't1', 'x', 'y');
+        $reviews->append('agent', thread: 't1', author: 'x', body: 'y');
         $this->assertNotSame($before, $reviews->fingerprint());
     }
 
@@ -257,8 +257,8 @@ final class LocalReviewsTest extends TestCase
         $project = new TempProject(['.porta/reviews/r/t/thread.json' => '{"path":"a","line":1}']);
         $reviews = new LocalReviews($project->dir);
 
-        $reviews->append('r', 't', 'a', 'one');
-        $reviews->append('r', 't', 'a', 'two');
+        $reviews->append('r', thread: 't', author: 'a', body: 'one');
+        $reviews->append('r', thread: 't', author: 'a', body: 'two');
 
         $this->assertSame(['one', 'two'], \array_map(static fn (Comment $c): string => $c->body, $reviews->read('r')?->threads[0]->comments ?? []));
         $this->assertMatchesRegularExpression('/^\d{8}T\d{6}\.\d{6}Z$/', $reviews->read('r')?->threads[0]->comments[0]->createdAt ?? '');
@@ -296,17 +296,17 @@ final class LocalReviewsTest extends TestCase
         $collect = static function (?string $e) use (&$errors): void {
             $errors[] = $e;
         };
-        $source->reply($review, $review->threads[0], 'ok', $collect);
-        $source->setResolved($review, $review->threads[0], true, $collect);
-        $source->comment($review, new Anchor('a', 2), 'new', $collect);
-        $source->converse($review, 'hi', $collect);
+        $source->reply($review, $review->threads[0], body: 'ok', onDone: $collect);
+        $source->setResolved($review, $review->threads[0], resolved: true, onDone: $collect);
+        $source->comment($review, new Anchor('a', 2), body: 'new', onDone: $collect);
+        $source->converse($review, body: 'hi', onDone: $collect);
         $this->assertSame([null, null, null, null], $errors);
         $this->assertSame('Pierre', $reviews->read($review->id)?->conversation[0]->author, 'the user signs with git\'s name');
 
         $gone = new Review(SourceKind::Local, 'gone', 'x', [$review->threads[0]]);
         $errors = [];
-        $source->reply($gone, $review->threads[0], 'ok', $collect);
-        $source->setResolved($gone, $review->threads[0], true, $collect);
+        $source->reply($gone, $review->threads[0], body: 'ok', onDone: $collect);
+        $source->setResolved($gone, $review->threads[0], resolved: true, onDone: $collect);
         $this->assertSame(['The thread is gone', 'The thread is gone'], $errors);
 
         $empty = new LocalSource($this->reviews(), static fn (): string => 'x');
@@ -324,14 +324,14 @@ final class LocalReviewsTest extends TestCase
 
         foreach (['..', '../r', 'r/t', '', '.hidden'] as $bad) {
             $this->assertNull($reviews->read($bad), $bad);
-            $this->assertFalse($reviews->describe($bad, 'x'), $bad);
-            $this->assertNull($reviews->open($bad, new Anchor('a', line: 1), 'a', 'b'), $bad);
-            $this->assertFalse($reviews->append($bad, 't', 'a', 'b'), $bad);
-            $this->assertFalse($reviews->append('r', $bad, 'a', 'b'), $bad);
-            $this->assertFalse($reviews->resolve('r', $bad, true), $bad);
+            $this->assertFalse($reviews->describe($bad, title: 'x'), $bad);
+            $this->assertNull($reviews->open($bad, new Anchor('a', line: 1), author: 'a', body: 'b'), $bad);
+            $this->assertFalse($reviews->append($bad, thread: 't', author: 'a', body: 'b'), $bad);
+            $this->assertFalse($reviews->append('r', $bad, author: 'a', body: 'b'), $bad);
+            $this->assertFalse($reviews->resolve('r', $bad, resolved: true), $bad);
         }
-        $this->assertFalse($reviews->resolve('r', LocalReviews::CONVERSATION, true), 'the conversation is no thread to resolve');
-        $this->assertTrue($reviews->describe('r', 'Titled'));
+        $this->assertFalse($reviews->resolve('r', LocalReviews::CONVERSATION, resolved: true), 'the conversation is no thread to resolve');
+        $this->assertTrue($reviews->describe('r', title: 'Titled'));
         $this->assertSame('Titled', $reviews->read('r')?->title);
         $this->assertDirectoryDoesNotExist($this->project->path('.porta/r'));
     }

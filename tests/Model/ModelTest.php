@@ -62,8 +62,8 @@ final class ModelTest extends TestCase
 
         $this->assertSame('src/A.php', ProjectPath::relative($project->dir, $project->dir.'/src/A.php'));
         $this->assertSame('src/A.php', ProjectPath::relative($project->dir.'/', $real.'/src/A.php'), 'the editor may have resolved a symlink the root has');
-        $this->assertNull(ProjectPath::relative($project->dir, '/elsewhere/A.php'));
-        $this->assertNull(ProjectPath::relative('/does/not/exist', '/elsewhere/A.php'));
+        $this->assertNull(ProjectPath::relative($project->dir, path: '/elsewhere/A.php'));
+        $this->assertNull(ProjectPath::relative('/does/not/exist', path: '/elsewhere/A.php'));
     }
 
     public function testTheDisplaySettingReadsBackAndDefaultsToTheGutter(): void

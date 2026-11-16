@@ -68,10 +68,10 @@ final class GitHubReviewE2eTest extends TestCase
         $project->git('remote', 'add', 'origin', 'git@github.com:acme/app.git');
         $project->commitAll('base');
         $this->base = $project->git('rev-parse', 'HEAD');
-        $project->write('src/A.php', "<?php\n\$a = 1;\n\$bee = 2;\n\$c = 3;\n");
+        $project->write('src/A.php', content: "<?php\n\$a = 1;\n\$bee = 2;\n\$c = 3;\n");
         $project->commitAll('head');
         $this->head = $project->git('rev-parse', 'HEAD');
-        $project->write('src/A.php', "<?php\n// added\n\$a = 1;\n\$bee = 2;\n\$c = 3;\n");
+        $project->write('src/A.php', content: "<?php\n// added\n\$a = 1;\n\$bee = 2;\n\$c = 3;\n");
 
         $this->forge = new FakeForge();
         $this->forge->route('query(', $this->pullRequest([['PRRT_1', 3, false, [['bob', "Why bee?\nIt was b."]]], ['PRRT_2', 4, true, [['carol', 'Fine.']]]]));
@@ -162,14 +162,14 @@ final class GitHubReviewE2eTest extends TestCase
     /** Every git process the plugin started has answered — its runner's lane, reached through the view. */
     private function awaitGitIdle(Ide $ide): void
     {
-        $lane = Probe::get(Probe::get(Services::resolve($ide, ViewRegistry::class)->find('review'), 'git'), 'lane');
+        $lane = Probe::get(Probe::get(Services::resolve($ide, ViewRegistry::class)->find('review'), property: 'git'), property: 'lane');
         $this->await(static fn (): bool => 0 === $lane->inFlight(), what: 'the plugin\'s git');
     }
 
     /** The review's reload has answered, and the pane it re-reads with it. */
     private function awaitReloaded(Ide $ide): void
     {
-        $store = Probe::get(Services::resolve($ide, ViewRegistry::class)->find('review'), 'store');
+        $store = Probe::get(Services::resolve($ide, ViewRegistry::class)->find('review'), property: 'store');
         $this->await(static fn (): bool => !$store->loading, what: 'the review to reload');
         $this->awaitGitIdle($ide);
     }
@@ -191,12 +191,12 @@ final class GitHubReviewE2eTest extends TestCase
                     $marks = static fn (): array => Widgets::editor($tui)->decorations->commentMarks;
                     $this->await(static fn (): bool => [] !== $marks(), what: 'the gutter mark');
                     $this->assertSame([3 => 'bob: Why bee?'], $marks(), 'head line 3 is the working copy\'s 4th; the resolved thread is hidden');
-                    $this->awaitPainted($tui, $terminal, '✎ PR #12 · 1');
+                    $this->awaitPainted($tui, $terminal, needle: '✎ PR #12 · 1');
 
                     // The caret on the marked line: "show conversation" opens the view on it.
-                    Widgets::editor($tui)->jumpTo(3, 0);
+                    Widgets::editor($tui)->jumpTo(3, utf16Col: 0);
                     Services::resolve($ide, CommandRegistry::class)->run('review:show_conversation');
-                    $this->awaitPainted($tui, $terminal, '+$bee = 2;');
+                    $this->awaitPainted($tui, $terminal, needle: '+$bee = 2;');
                     $this->assertTrue(Services::resolve($ide, ViewRegistry::class)->find('review')?->isOpen());
                     $this->assertStringContainsString('-$b = 2;', AnsiUtils::stripAnsiCodes($terminal->getOutput()), 'the review\'s own diff, base...head');
                 },
@@ -207,12 +207,12 @@ final class GitHubReviewE2eTest extends TestCase
                     $this->await(static fn (): bool => true !== Services::resolve($ide, ViewRegistry::class)->find('review')?->isOpen(), what: 'the view to close');
                     $this->assertSame(2, Widgets::editor($tui)->getDocument()->cursorLine, 'the head\'s line 3, as the thread names it');
 
-                    Widgets::editor($tui)->jumpTo(0, 0);
+                    Widgets::editor($tui)->jumpTo(0, utf16Col: 0);
                     Services::resolve($ide, CommandRegistry::class)->run('review:show_conversation');
-                    $this->awaitToast($ide, 'No conversation on this line');
+                    $this->awaitToast($ide, message: 'No conversation on this line');
 
                     Services::resolve($ide, CommandRegistry::class)->run('review:copy_link');
-                    $this->awaitToast($ide, 'Copied https://github.com/acme/app/pull/12');
+                    $this->awaitToast($ide, message: 'Copied https://github.com/acme/app/pull/12');
                 },
             ],
         );
@@ -228,21 +228,21 @@ final class GitHubReviewE2eTest extends TestCase
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
                     Services::resolve($ide, CommandRegistry::class)->run('review:open');
-                    $this->awaitPainted($tui, $terminal, 'Tidy the names');
+                    $this->awaitPainted($tui, $terminal, needle: 'Tidy the names');
                     // The conversation first: `c` in the list writes to the review.
-                    $this->awaitPainted($tui, $terminal, 'Please review.');
+                    $this->awaitPainted($tui, $terminal, needle: 'Please review.');
                     $tui->handleInput('c');
-                    $this->awaitPainted($tui, $terminal, 'Comment on PR #12');
+                    $this->awaitPainted($tui, $terminal, needle: 'Comment on PR #12');
                     $tui->handleInput('Ready');
                     $tui->handleInput("\x1b[13;5u");
-                    $this->awaitToast($ide, 'Sent');
+                    $this->awaitToast($ide, message: 'Sent');
                 },
                 300 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
                     $tui->setFocus($tui->getById('review-threads'));
                     $tui->handleInput("\x1b[B"); // the thread
-                    $this->awaitPainted($tui, $terminal, '+$bee = 2;');
+                    $this->awaitPainted($tui, $terminal, needle: '+$bee = 2;');
                     $tui->handleInput('r');
-                    $this->awaitPainted($tui, $terminal, 'Reply to bob on src/A.php:3');
+                    $this->awaitPainted($tui, $terminal, needle: 'Reply to bob on src/A.php:3');
                     $tui->handleInput('Renamed');
                     $tui->handleInput("\x1b[13;5u");
                     $this->await(fn (): bool => 2 === \count($this->writes()), what: 'the reply');
@@ -250,7 +250,7 @@ final class GitHubReviewE2eTest extends TestCase
                 400 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
                     $tui->setFocus($tui->getById('review-threads'));
                     $tui->handleInput('x');
-                    $this->awaitToast($ide, 'Thread resolved');
+                    $this->awaitToast($ide, message: 'Thread resolved');
                     // The toast is the write's answer; the reload it starts re-reads the
                     // diff and puts the cursor back on the thread — after the keys below,
                     // under load, which took the `c` off its line.
@@ -262,7 +262,7 @@ final class GitHubReviewE2eTest extends TestCase
                     $this->assertSame($tui->getById('review-diff'), $tui->getFocus());
                     $tui->handleInput("\x1b[A"); // from the thread's head to the added line it is under
                     $tui->handleInput('c');
-                    $this->awaitPainted($tui, $terminal, 'New comment on src/A.php:3');
+                    $this->awaitPainted($tui, $terminal, needle: 'New comment on src/A.php:3');
                     $tui->handleInput('Nit');
                     $tui->handleInput("\x1b[13;5u");
                     // Typed while the comment is on its way: its answer must not take this with it.
@@ -270,7 +270,7 @@ final class GitHubReviewE2eTest extends TestCase
                     // The barrier is a read logged AFTER the comment's own call: the reload
                     // a successful write starts, right after the box is cleared.
                     $this->await(fn (): bool => $this->readAfter('pulls/12/comments'), what: 'the reload after the comment');
-                    $this->assertSame('Nitx', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->text(), 'not what was sent, so kept');
+                    $this->assertSame('Nitx', Widgets::byId($tui, id: 'review-reply', class: ReplyBoxWidget::class)->text(), 'not what was sent, so kept');
                 },
                 500 => function (Tui $tui, $terminal, Ide $ide): void {
                     $this->assertSame(['addComment', 'addPullRequestReviewThreadReply', 'resolveReviewThread', 'repos/acme/app/pulls/12/comments'], $this->writes());
@@ -286,8 +286,8 @@ final class GitHubReviewE2eTest extends TestCase
                     $tui->handleInput('r');
                     $tui->handleInput('Again');
                     $tui->handleInput("\x1b[13;5u");
-                    $this->awaitToast($ide, 'Thread is locked');
-                    $this->assertSame('Again', Widgets::byId($tui, 'review-reply', ReplyBoxWidget::class)->text());
+                    $this->awaitToast($ide, message: 'Thread is locked');
+                    $this->assertSame('Again', Widgets::byId($tui, id: 'review-reply', class: ReplyBoxWidget::class)->text());
                 },
             ],
         );
@@ -313,13 +313,13 @@ final class GitHubReviewE2eTest extends TestCase
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
                     Services::resolve($ide, CommandRegistry::class)->run('review:open');
-                    $this->awaitPainted($tui, $terminal, 'Why bee?');
+                    $this->awaitPainted($tui, $terminal, needle: 'Why bee?');
                     $tui->setFocus($tui->getById('review-threads'));
                     $tui->handleInput("\x1b[B"); // the thread: its file starts loading
                     $tui->handleInput('R'); // and a reload overtakes it
                     $this->awaitReloaded($ide);
 
-                    $this->assertSame('PRRT_1', Widgets::byId($tui, 'review-diff', ReviewContentWidget::class)->currentThread()?->id, 'the caret is on the thread that was asked for');
+                    $this->assertSame('PRRT_1', Widgets::byId($tui, id: 'review-diff', class: ReviewContentWidget::class)->currentThread()?->id, 'the caret is on the thread that was asked for');
                 },
             ],
         );
@@ -344,7 +344,7 @@ final class GitHubReviewE2eTest extends TestCase
 
     public function testTheInlineModeShowsTheWholeThreadUnderItsLine(): void
     {
-        $project = $this->project('inline', 'true');
+        $project = $this->project('inline', resolved: 'true');
 
         $this->runIde(
             $project,
@@ -356,7 +356,7 @@ final class GitHubReviewE2eTest extends TestCase
                     $this->assertSame(['✎ bob: Why bee?', '    It was b.'], $editor->decorations->lineBlocksAt(3));
                     $this->assertSame(['✎ carol: Fine.  (resolved)'], $editor->decorations->lineBlocksAt(4), 'shown resolved when asked');
                     $this->assertSame([], $editor->decorations->lineAnnotations);
-                    $this->awaitPainted($tui, $terminal, 'It was b.');
+                    $this->awaitPainted($tui, $terminal, needle: 'It was b.');
                 },
             ],
         );
@@ -403,7 +403,7 @@ final class GitHubReviewE2eTest extends TestCase
             [
                 200 => function (Tui $tui, VirtualTerminal $terminal, Ide $ide): void {
                     Services::resolve($ide, CommandRegistry::class)->run('review:open');
-                    $this->awaitPainted($tui, $terminal, 'Please review.');
+                    $this->awaitPainted($tui, $terminal, needle: 'Please review.');
                     $this->awaitGitIdle($ide);
 
                     $tui->handleInput("\x1b[B"); // the thread: its file starts loading
@@ -413,7 +413,10 @@ final class GitHubReviewE2eTest extends TestCase
 
                     $screen = AnsiUtils::stripAnsiCodes($terminal->getOutput());
                     $this->assertStringContainsString('PR #12 · Tidy the names', $screen, 'the conversation\'s title');
-                    $this->assertStringNotContainsString('+$bee = 2;', \implode("\n", $this->rows(Widgets::byId($tui, 'review-diff', ReviewContentWidget::class)->render(new RenderContext(80, 20)))));
+                    $this->assertStringNotContainsString('+$bee = 2;', \implode(
+                        "\n",
+                        $this->rows(Widgets::byId($tui, id: 'review-diff', class: ReviewContentWidget::class)->render(new RenderContext(80, 20))),
+                    ));
                 },
             ],
         );

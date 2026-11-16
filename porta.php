@@ -45,25 +45,25 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
     {
         $api->registerSetting(
             'provider',
-            'Where reviews come from',
-            'choice',
-            'auto',
-            ['auto', 'github', 'gitlab', 'local'],
+            label: 'Where reviews come from',
+            kind: 'choice',
+            default: 'auto',
+            options: ['auto', 'github', 'gitlab', 'local'],
             hint: 'auto: a local review when one is on disk, else the branch remote\'s forge',
         );
         $api->registerSetting(
             'editorDisplay',
-            'Conversations in the editor',
-            'choice',
-            EditorDisplay::Gutter->value,
-            EditorDisplay::values(),
+            label: 'Conversations in the editor',
+            kind: 'choice',
+            default: EditorDisplay::Gutter->value,
+            options: EditorDisplay::values(),
             hint: 'gutter: a ✎ mark · summary: and the first comment after the line · inline: and the whole thread under it',
         );
-        $api->registerSetting('showResolved', 'Show resolved threads', 'bool', false);
-        $api->registerSetting('refreshSeconds', 'Re-read a forge review every (seconds, 0 = never)', 'int', 0, min: 0, step: 30);
-        $api->registerSetting('hosts', 'Self-hosted forges', 'text', '', hint: 'host=github or host=gitlab, comma-separated');
-        $api->registerSetting('ghBinary', 'gh path', 'text', '', hint: 'empty: found on PATH');
-        $api->registerSetting('glabBinary', 'glab path', 'text', '', hint: 'empty: found on PATH');
+        $api->registerSetting('showResolved', label: 'Show resolved threads', kind: 'bool', default: false);
+        $api->registerSetting('refreshSeconds', label: 'Re-read a forge review every (seconds, 0 = never)', kind: 'int', default: 0, min: 0, step: 30);
+        $api->registerSetting('hosts', label: 'Self-hosted forges', kind: 'text', default: '', hint: 'host=github or host=gitlab, comma-separated');
+        $api->registerSetting('ghBinary', label: 'gh path', kind: 'text', default: '', hint: 'empty: found on PATH');
+        $api->registerSetting('glabBinary', label: 'glab path', kind: 'text', default: '', hint: 'empty: found on PATH');
 
         $root = $api->projectRoot();
         $lane = new ProcessLane();
@@ -150,18 +150,18 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
             return $view = new ReviewViewController($services, $api, $store, $git, $list, $reply, $content, $showResolved);
         });
 
-        $api->registerCommand('open', 'Show Review', static fn () => $api->toggleView(ReviewViewController::ID));
-        $api->registerCommand('refresh', 'Refresh Review', $store->refresh(...));
-        $api->registerCommand('choose', 'Choose Review…', $commands->choose(...));
-        $api->registerCommand('copy_link', 'Copy Review Link', $commands->copyLink(...));
-        $api->registerCommand('show_conversation', 'Show Conversation on This Line', $commands->showConversationAtCaret(...));
-        $api->registerCommand('comment_line', 'Comment on This Line', $commands->commentAtCaret(...));
+        $api->registerCommand('open', label: 'Show Review', handler: static fn () => $api->toggleView(ReviewViewController::ID));
+        $api->registerCommand('refresh', label: 'Refresh Review', handler: $store->refresh(...));
+        $api->registerCommand('choose', label: 'Choose Review…', handler: $commands->choose(...));
+        $api->registerCommand('copy_link', label: 'Copy Review Link', handler: $commands->copyLink(...));
+        $api->registerCommand('show_conversation', label: 'Show Conversation on This Line', handler: $commands->showConversationAtCaret(...));
+        $api->registerCommand('comment_line', label: 'Comment on This Line', handler: $commands->commentAtCaret(...));
         $api->addMenuItem('show_conversation', static fn (): bool => null !== $store->review, MenuSurface::EditorContext);
         $api->addMenuItem('comment_line', static fn (): bool => null !== $store->review, MenuSurface::EditorContext);
         $api->registerMenu(
             'Review',
-            'Run',
-            ['i:review:open', MenuModel::SEP, 'i:review:refresh', 'i:review:choose', 'i:review:copy_link'],
+            after: 'Run',
+            items: ['i:review:open', MenuModel::SEP, 'i:review:refresh', 'i:review:choose', 'i:review:copy_link'],
             viewId: ReviewViewController::ID,
             viewSafe: ['ide_quit', 'review:open', 'review:refresh', 'review:choose', 'review:copy_link', 'ide_command_palette', 'ide_help', 'ide_welcome'],
         );

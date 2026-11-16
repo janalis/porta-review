@@ -35,47 +35,47 @@ final class LineTranslatorTest extends TestCase
     {
         $diff = self::diff();
 
-        $this->assertSame(1, LineTranslator::throughDiff($diff, 1));
-        $this->assertSame(2, LineTranslator::throughDiff($diff, 2), 'the insertion is AFTER line 2');
-        $this->assertSame(5, LineTranslator::throughDiff($diff, 3), 'below the insertion: two further down');
-        $this->assertSame(8, LineTranslator::throughDiff($diff, 6), 'the rewrite kept the count');
-        $this->assertSame(10, LineTranslator::throughDiff($diff, 10), 'the deletion takes back the two the insertion added');
-        $this->assertSame(12, LineTranslator::throughDiff($diff, 12));
+        $this->assertSame(1, LineTranslator::throughDiff($diff, line: 1));
+        $this->assertSame(2, LineTranslator::throughDiff($diff, line: 2), 'the insertion is AFTER line 2');
+        $this->assertSame(5, LineTranslator::throughDiff($diff, line: 3), 'below the insertion: two further down');
+        $this->assertSame(8, LineTranslator::throughDiff($diff, line: 6), 'the rewrite kept the count');
+        $this->assertSame(10, LineTranslator::throughDiff($diff, line: 10), 'the deletion takes back the two the insertion added');
+        $this->assertSame(12, LineTranslator::throughDiff($diff, line: 12));
     }
 
     public function testALineAHunkRewroteOrDeletedHasNoPlace(): void
     {
         $diff = self::diff();
 
-        $this->assertNull(LineTranslator::throughDiff($diff, 5));
-        $this->assertNull(LineTranslator::throughDiff($diff, 8));
-        $this->assertNull(LineTranslator::throughDiff($diff, 9));
-        $this->assertSame(4, LineTranslator::throughDiff(DiffDocument::parse(''), 4), 'no diff: every line where it was');
+        $this->assertNull(LineTranslator::throughDiff($diff, line: 5));
+        $this->assertNull(LineTranslator::throughDiff($diff, line: 8));
+        $this->assertNull(LineTranslator::throughDiff($diff, line: 9));
+        $this->assertSame(4, LineTranslator::throughDiff(DiffDocument::parse(''), line: 4), 'no diff: every line where it was');
     }
 
     public function testATextIsFoundNearestItsLineTrimmed(): void
     {
         $lines = ['a', '  target', 'b', 'c', 'target  ', 'd'];
 
-        $this->assertSame(2, LineTranslator::byText($lines, 2, 'target'), 'still where it was');
-        $this->assertSame(2, LineTranslator::byText($lines, 3, 'target'), 'one up beats three down');
-        $this->assertSame(5, LineTranslator::byText($lines, 5, "\ttarget"), 'a re-indent does not lose it');
-        $this->assertSame(5, LineTranslator::byText($lines, 99, 'target'), 'a line past the end still searches back, nearest first');
-        $this->assertNull(LineTranslator::byText($lines, 3, 'gone'));
+        $this->assertSame(2, LineTranslator::byText($lines, line: 2, text: 'target'), 'still where it was');
+        $this->assertSame(2, LineTranslator::byText($lines, line: 3, text: 'target'), 'one up beats three down');
+        $this->assertSame(5, LineTranslator::byText($lines, line: 5, text: "\ttarget"), 'a re-indent does not lose it');
+        $this->assertSame(5, LineTranslator::byText($lines, line: 99, text: 'target'), 'a line past the end still searches back, nearest first');
+        $this->assertNull(LineTranslator::byText($lines, line: 3, text: 'gone'));
         $this->assertNull(LineTranslator::byText(\array_fill(start_index: 0, count: 500, value: 'x'), line: 1, text: 'y'), 'nor searches forever');
     }
 
     public function testTheTextIsFoundOnTheFilesEdgesAndAtTheEdgeOfReach(): void
     {
-        $this->assertSame(2, LineTranslator::byText(['t', 't', 't'], 2, 't'), 'the line itself before either neighbour');
-        $this->assertSame(1, LineTranslator::byText(['t', 'x', 't'], 2, 't'), 'the earlier of two equally near');
-        $this->assertSame(1, LineTranslator::byText(['target', 'x', 'x'], 3, 'target'), 'the first line');
-        $this->assertSame(3, LineTranslator::byText(['x', 'x', 'target'], 1, 'target'), 'the last line');
+        $this->assertSame(2, LineTranslator::byText(['t', 't', 't'], line: 2, text: 't'), 'the line itself before either neighbour');
+        $this->assertSame(1, LineTranslator::byText(['t', 'x', 't'], line: 2, text: 't'), 'the earlier of two equally near');
+        $this->assertSame(1, LineTranslator::byText(['target', 'x', 'x'], line: 3, text: 'target'), 'the first line');
+        $this->assertSame(3, LineTranslator::byText(['x', 'x', 'target'], line: 1, text: 'target'), 'the last line');
 
         $far = \array_fill(start_index: 0, count: 300, value: 'x');
         $far[200] = 'target';
-        $this->assertSame(201, LineTranslator::byText($far, 1, 'target'), 'two hundred lines away is still in reach');
-        $this->assertNull(LineTranslator::byText($far, 1, 'x-not-there'));
-        $this->assertNull(LineTranslator::byText(\array_replace($far, [200 => 'x', 201 => 'target']), 1, 'target'), 'two hundred and one is not');
+        $this->assertSame(201, LineTranslator::byText($far, line: 1, text: 'target'), 'two hundred lines away is still in reach');
+        $this->assertNull(LineTranslator::byText($far, line: 1, text: 'x-not-there'));
+        $this->assertNull(LineTranslator::byText(\array_replace($far, [200 => 'x', 201 => 'target']), line: 1, text: 'target'), 'two hundred and one is not');
     }
 }

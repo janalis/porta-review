@@ -52,7 +52,7 @@ final class ReviewCommandTest extends TestCase
         $this->assertSame('Start at one?', $review?->threads[0]->first()->body);
         $this->assertSame($thread, $review?->threads[0]->id, 'the new thread\'s id is printed, for the reply that follows');
 
-        $this->assertSame(0, $this->exec(['action' => 'reply', 'words' => [$thread, '-'], '--author' => 'pierre'], "No, zero.\n")->getStatusCode());
+        $this->assertSame(0, $this->exec(['action' => 'reply', 'words' => [$thread, '-'], '--author' => 'pierre'], stdin: "No, zero.\n")->getStatusCode());
         $this->assertSame(0, $this->exec(['action' => 'comment', 'words' => ['Overall', 'fine'], '--author' => 'claude'])->getStatusCode());
         $this->assertSame(0, $this->exec(['action' => 'resolve', 'words' => [$thread]])->getStatusCode());
 
@@ -74,7 +74,7 @@ final class ReviewCommandTest extends TestCase
 
     public function testListShowsTheNamedReviewWholeAsPrettyJsonAndAsIndentedText(): void
     {
-        $this->exec(['action' => 'add', 'words' => ['src/Cart.php:2', '-'], '--review' => 'older', '--author' => 'claude', '--title' => 'Panier ü/2'], "  First line\nsecond line  \n");
+        $this->exec(['action' => 'add', 'words' => ['src/Cart.php:2', '-'], '--review' => 'older', '--author' => 'claude', '--title' => 'Panier ü/2'], stdin: "  First line\nsecond line  \n");
         $older = $this->project->path('.porta/reviews/older');
         foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($older, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST) as $file) {
             \touch((string) $file, mtime: 1_700_000_000);

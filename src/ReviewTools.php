@@ -35,42 +35,42 @@ final readonly class ReviewTools
     {
         $this->api->registerTool(
             'threads',
-            'The current branch\'s review — a GitHub pull request, a GitLab merge request, or a local review — with every line conversation (path, 1-based line, resolved, comments) and the review-level ones.',
-            ['type' => 'object', 'properties' => ['includeResolved' => ['type' => 'boolean', 'description' => 'Also the resolved threads; default false']]],
-            $this->threads(...),
+            description: 'The current branch\'s review — a GitHub pull request, a GitLab merge request, or a local review — with every line conversation (path, 1-based line, resolved, comments) and the review-level ones.',
+            inputSchema: ['type' => 'object', 'properties' => ['includeResolved' => ['type' => 'boolean', 'description' => 'Also the resolved threads; default false']]],
+            handler: $this->threads(...),
             effect: ToolEffect::Reads,
         );
         $this->api->registerTool(
             'reply',
-            'Answer a thread of the current review, by its id from review_threads.',
-            [
+            description: 'Answer a thread of the current review, by its id from review_threads.',
+            inputSchema: [
                 'type' => 'object',
                 'properties' => ['thread' => ['type' => 'string'], 'body' => ['type' => 'string']],
                 'required' => ['thread', 'body'],
             ],
-            $this->reply(...),
+            handler: $this->reply(...),
             effect: ToolEffect::Publishes,
         );
         $this->api->registerTool(
             'resolve',
-            'Resolve a thread of the current review, by its id from review_threads — or reopen it with resolved: false (list the resolved ones with includeResolved).',
-            [
+            description: 'Resolve a thread of the current review, by its id from review_threads — or reopen it with resolved: false (list the resolved ones with includeResolved).',
+            inputSchema: [
                 'type' => 'object',
                 'properties' => ['thread' => ['type' => 'string'], 'resolved' => ['type' => 'boolean', 'description' => 'Default true']],
                 'required' => ['thread'],
             ],
-            $this->resolve(...),
+            handler: $this->resolve(...),
             effect: ToolEffect::Publishes,
         );
         $this->api->registerTool(
             'comment',
-            'Start a conversation on a line of the current review: a project-relative path and a 1-based line of the file as it is now.',
-            [
+            description: 'Start a conversation on a line of the current review: a project-relative path and a 1-based line of the file as it is now.',
+            inputSchema: [
                 'type' => 'object',
                 'properties' => ['path' => ['type' => 'string'], 'line' => ['type' => 'integer', 'minimum' => 1], 'body' => ['type' => 'string']],
                 'required' => ['path', 'line', 'body'],
             ],
-            $this->comment(...),
+            handler: $this->comment(...),
             effect: ToolEffect::Publishes,
         );
     }
@@ -111,7 +111,7 @@ final readonly class ReviewTools
     /** @param array<string, mixed> $arguments */
     private function reply(array $arguments): string
     {
-        $body = self::text($arguments, 'body');
+        $body = self::text($arguments, key: 'body');
         $thread = $this->thread($arguments);
         $this->write(static function (ReviewSource $source, Review $review, \Closure $done) use ($thread, $body): void {
             $source->reply($review, $thread, $body, $done);
@@ -139,7 +139,7 @@ final readonly class ReviewTools
     /** @param array<string, mixed> $arguments */
     private function thread(array $arguments): Thread
     {
-        $id = self::text($arguments, 'thread');
+        $id = self::text($arguments, key: 'thread');
 
         return $this->review()->thread($id) ?? throw new \InvalidArgumentException(\sprintf('No thread "%s" in this review', $id));
     }
@@ -147,8 +147,8 @@ final readonly class ReviewTools
     /** @param array<string, mixed> $arguments */
     private function comment(array $arguments): string
     {
-        $path = self::text($arguments, 'path');
-        $body = self::text($arguments, 'body');
+        $path = self::text($arguments, key: 'path');
+        $body = self::text($arguments, key: 'body');
         $line = \is_int($arguments['line'] ?? null) ? $arguments['line'] : 0;
         if ($line < 1) {
             throw new \InvalidArgumentException('line is a positive integer');
@@ -171,7 +171,7 @@ final readonly class ReviewTools
     {
         if ($this->store->loading) {
             /** @var bool $settled */
-            $settled = FiberWait::within($this->loadTimeout, fn (\Closure $done) => $this->store->whenSettled(static fn () => $done(true)), false);
+            $settled = FiberWait::within($this->loadTimeout, fn (\Closure $done) => $this->store->whenSettled(static fn () => $done(true)), timedOut: false);
             if (true !== $settled) {
                 throw new \RuntimeException(\sprintf('The review is still loading after %gs — ask again later', $this->loadTimeout));
             }

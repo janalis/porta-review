@@ -36,14 +36,14 @@ final class ForgeTransportTest extends TestCase
         $forge = new FakeForge()->answerJson(['data' => ['ok' => true]])->answer('');
         $transport = $forge->transport('ghe.corp.com');
 
-        $this->send($transport, 'POST', 'graphql', ['query' => 'q', 'variables' => ['a' => 'é/']]);
+        $this->send($transport, method: 'POST', path: 'graphql', body: ['query' => 'q', 'variables' => ['a' => 'é/']]);
         $this->assertTrue($this->answer[0]?->at('data', 'ok')->isTrue());
         $this->assertNull($this->answer[1]);
         $this->assertSame(['api', '--method', 'POST', 'graphql', '--hostname', 'ghe.corp.com', '--input', '-', '--header', 'Content-Type: application/json'], $forge->calls()[0]['argv']);
         $this->assertSame(['query' => 'q', 'variables' => ['a' => 'é/']], $forge->body(0));
 
         // No body: no --input, and an empty answer is a success with nothing in it.
-        $this->send($transport, 'GET', 'repos/a/b');
+        $this->send($transport, method: 'GET', path: 'repos/a/b');
         $this->assertSame(['api', '--method', 'GET', 'repos/a/b', '--hostname', 'ghe.corp.com'], $forge->calls()[1]['argv']);
         $this->assertInstanceOf(Json::class, $this->answer[0]);
         $this->assertNull($this->answer[1]);
@@ -52,22 +52,22 @@ final class ForgeTransportTest extends TestCase
     public function testAFailureSaysTheApisOwnSentenceElseTheToolsLastLine(): void
     {
         $forge = new FakeForge()
-            ->answer('{"message":"Not Found"}', 1, "gh: Not Found (HTTP 404)\n")
-            ->answer('{"message":{"base":["Line is not in the diff"]}}', 1)
+            ->answer('{"message":"Not Found"}', code: 1, stderr: "gh: Not Found (HTTP 404)\n")
+            ->answer('{"message":{"base":["Line is not in the diff"]}}', code: 1)
             ->answer('{"errors":[{"message":"Could not resolve to a node"}],"data":null}')
-            ->answer('not json', 1, "gh: bad\ngh: worse\n")
-            ->answer('', 1);
+            ->answer('not json', code: 1, stderr: "gh: bad\ngh: worse\n")
+            ->answer('', code: 1);
         $transport = $forge->transport();
 
-        $this->send($transport, 'GET', 'x');
+        $this->send($transport, method: 'GET', path: 'x');
         $this->assertSame([null, 'Not Found'], $this->answer);
-        $this->send($transport, 'GET', 'x');
+        $this->send($transport, method: 'GET', path: 'x');
         $this->assertSame([null, 'Line is not in the diff'], $this->answer, 'GitLab\'s validation shape');
-        $this->send($transport, 'POST', 'graphql', []);
+        $this->send($transport, method: 'POST', path: 'graphql', body: []);
         $this->assertSame([null, 'Could not resolve to a node'], $this->answer, 'GraphQL fails inside a 200');
-        $this->send($transport, 'GET', 'x');
+        $this->send($transport, method: 'GET', path: 'x');
         $this->assertSame([null, 'not json'], $this->answer, 'the last line of what it printed');
-        $this->send($transport, 'GET', 'x');
+        $this->send($transport, method: 'GET', path: 'x');
         $this->assertSame([null, 'The request failed'], $this->answer, 'and something, when it printed nothing');
     }
 
@@ -78,7 +78,7 @@ final class ForgeTransportTest extends TestCase
         \putenv('FAKE_FORGE_TOKEN=');
         \putenv('FAKE_FORGE_TOKEN_2=s3cr"et');
 
-        $this->send($transport, 'POST', 'repos/a/b/pulls/1/comments', ['body' => "say \"hi\"\n\\o/"]);
+        $this->send($transport, method: 'POST', path: 'repos/a/b/pulls/1/comments', body: ['body' => "say \"hi\"\n\\o/"]);
 
         $this->assertSame(1, $this->answer[0]?->at('id')->int());
         $call = $forge->calls()[0];
@@ -89,7 +89,7 @@ final class ForgeTransportTest extends TestCase
         $this->assertStringContainsString('data-binary = "{\\"body\\":\\"say \\\\\\"hi\\\\\\"\\\\n\\\\\\\\o/\\"}"', $call['stdin'], 'the body, escaped for a config string');
         $this->assertStringContainsString('fail-with-body', $call['stdin']);
 
-        $this->send($transport, 'GET', 'repos/a/b');
+        $this->send($transport, method: 'GET', path: 'repos/a/b');
         $this->assertStringNotContainsString('data-binary', $forge->calls()[1]['stdin'], 'a GET sends no body');
     }
 
@@ -97,7 +97,7 @@ final class ForgeTransportTest extends TestCase
     {
         $transport = new FakeForge()->curlTransport();
 
-        $this->send($transport, 'GET', 'x');
+        $this->send($transport, method: 'GET', path: 'x');
 
         $this->assertSame([null, 'Install and log in to gh, or set FAKE_FORGE_TOKEN'], $this->answer);
     }

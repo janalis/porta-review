@@ -136,7 +136,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         $this->highlights->refreshTheme();
         // The same rows come back, re-coloured: the caret keeps its index.
         $selected = $this->list->selected();
-        $this->rebuild(null, null);
+        $this->rebuild(null, focus: null);
         $this->list->select($selected);
     }
 
@@ -314,12 +314,12 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
         $this->builder = function (int $width) use ($comments): array {
             $rows = [];
             foreach ($comments as $comment) {
-                \array_push($rows, ...$this->commentRows($comment, null, $width, ''));
+                \array_push($rows, ...$this->commentRows($comment, thread: null, width: $width, indent: ''));
             }
 
             return [] === $rows ? [['text' => '<dim> '.MarkupParser::escape($this->translator->trans('No comments yet — press c to write one')).'</>', 'anchor' => null, 'thread' => null]] : $rows;
         };
-        $this->rebuild(null, null);
+        $this->rebuild(null, focus: null);
     }
 
     public function clearContent(): void
@@ -521,10 +521,10 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
     {
         $kb = $this->getKeybindings();
         match (true) {
-            $kb->matches($data, 'exit_view') => $this->fire($this->onExit),
-            $kb->matches($data, 'focus_next_pane') => $this->fire($this->onFocusNext),
-            $kb->matches($data, 'toggle_resolved') => $this->fire($this->onToggleResolved),
-            ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), 20) => $this->invalidate(),
+            $kb->matches($data, action: 'exit_view') => $this->fire($this->onExit),
+            $kb->matches($data, action: 'focus_next_pane') => $this->fire($this->onFocusNext),
+            $kb->matches($data, action: 'toggle_resolved') => $this->fire($this->onToggleResolved),
+            ListNavigation::handleKey($data, $kb, $this->list, \count($this->rows), page: 20) => $this->invalidate(),
             default => $this->runVerb($data, $kb),
         };
     }
@@ -559,7 +559,7 @@ final class ReviewContentWidget extends AbstractWidget implements FocusableInter
             }
             $selected = $this->list->isSelected($scroll + $row);
             $text = AnsiText::truncate($entry['ansi'] ?? $this->styles->format($entry['text']), $width, pad: true);
-            $lines[] = $selected && $this->focused ? $this->shadeRow($text, true, hovered: false) : $text;
+            $lines[] = $selected && $this->focused ? $this->shadeRow($text, selected: true, hovered: false) : $text;
         }
 
         return $lines;

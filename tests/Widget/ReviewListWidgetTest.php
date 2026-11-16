@@ -177,7 +177,7 @@ final class ReviewListWidgetTest extends TestCase
 
         $box->target('Comment on PR #12');
         $this->assertSame('', $box->text(), 'another target starts afresh');
-        $this->assertSame('Comment on PR #12', Probe::get($box, 'target'));
+        $this->assertSame('Comment on PR #12', Probe::get($box, property: 'target'));
         $box->handleInput('y');
         $box->clearSent('another');
         $this->assertSame('y', $box->text(), 'a draft that is not what was sent stays');
