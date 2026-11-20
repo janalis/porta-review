@@ -23,10 +23,10 @@ use Porta\ReviewPlugin\View\ReviewViewController;
 use Porta\ReviewPlugin\Widget\ReplyBoxWidget;
 use Porta\ReviewPlugin\Widget\ReviewContentWidget;
 use Porta\ReviewPlugin\Widget\ReviewListWidget;
+use Porta\Support\PathExecutables;
 use Porta\Workbench\Menu\MenuModel;
 use Porta\Workbench\Menu\MenuSurface;
 use Porta\Workbench\View\ViewServices;
-use Symfony\Component\Process\ExecutableFinder;
 
 /**
  * Code review conversations: a GitHub pull request's or a GitLab merge
@@ -74,7 +74,7 @@ return new class('review') extends AbstractPlugin implements DisposablePlugin {
         $git->run(['config', 'user.name'], static function (string $name) use (&$author): void {
             $author = '' === trim($name) ? $author : trim($name);
         });
-        $finder = new ExecutableFinder();
+        $finder = PathExecutables::here();
         $sources = new Sources(
             $root,
             $git,
